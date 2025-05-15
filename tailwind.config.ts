@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,27 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Ghana-inspired color palette
+				ghana: {
+					red: '#CE1126',
+					gold: '#FCD116',
+					green: '#006B3F',
+					earth: {
+						light: '#E9D8A6',
+						DEFAULT: '#94621F',
+						dark: '#5E3A0C',
+					},
+					forest: {
+						light: '#A7C957',
+						DEFAULT: '#006B3F',
+						dark: '#00472A',
+					},
+					water: {
+						light: '#90E0EF',
+						DEFAULT: '#0077B6',
+						dark: '#023E8A',
+					},
 				}
 			},
 			borderRadius: {
@@ -84,13 +106,25 @@ export default {
 					to: {
 						height: '0'
 					}
-				}
+				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' },
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'float': 'float 3s ease-in-out infinite',
+			},
+			fontFamily: {
+				sans: ['Inter', 'sans-serif'],
+			},
+			backgroundImage: {
+				'ghana-pattern': "url('/lovable-uploads/7c60fe86-e12c-4885-831a-1af52374d8a4.png')",
 			}
 		}
 	},
 	plugins: [require("tailwindcss-animate")],
 } satisfies Config;
+
