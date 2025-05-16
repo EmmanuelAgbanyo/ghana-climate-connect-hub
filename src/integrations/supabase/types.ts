@@ -9,7 +9,90 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      admin_users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_super_admin: boolean
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          is_super_admin?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_super_admin?: boolean
+        }
+        Relationships: []
+      }
+      climate_content: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          id: string
+          last_updated: string
+          source_url: string | null
+          title: string
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string
+          id?: string
+          last_updated?: string
+          source_url?: string | null
+          title: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          last_updated?: string
+          source_url?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      data_sources: {
+        Row: {
+          api_endpoint: string | null
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          last_fetched: string | null
+          name: string
+          url: string
+        }
+        Insert: {
+          api_endpoint?: string | null
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_fetched?: string | null
+          name: string
+          url: string
+        }
+        Update: {
+          api_endpoint?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_fetched?: string | null
+          name?: string
+          url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
