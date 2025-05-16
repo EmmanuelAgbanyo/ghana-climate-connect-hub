@@ -1,5 +1,5 @@
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -39,8 +39,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { name: "Content Management", href: "/admin/content", icon: FileText },
     { name: "Data Sources", href: "/admin/data-sources", icon: Globe },
     { name: "Chatbot Configuration", href: "/admin/chatbot", icon: MessageSquare },
-    { name: "User Management", href: "/admin/users", icon: Users },
-    { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
 
   const toggleSidebar = () => {
@@ -93,19 +91,21 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </ScrollArea>
 
           <div className="border-t border-white/10 p-4">
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
-                  <Users className="h-5 w-5" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
+                    <Users className="h-5 w-5" />
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">
-                  {user?.email}
-                </p>
-                <p className="text-xs text-white/70 truncate">
-                  Admin User
-                </p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">
+                    {user?.email}
+                  </p>
+                  <p className="text-xs text-white/70 truncate">
+                    Admin User
+                  </p>
+                </div>
               </div>
               <Button
                 variant="ghost"
@@ -121,8 +121,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       </div>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <div className="p-6">{children}</div>
+      <main className="flex-1 overflow-auto p-6">
+        {children}
       </main>
     </div>
   );
