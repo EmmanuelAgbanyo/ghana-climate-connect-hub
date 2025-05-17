@@ -1,5 +1,5 @@
 
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState } from 'react';
 import { Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -11,11 +11,13 @@ import {
   MessageSquare, 
   Settings, 
   Users, 
-  X 
+  X,
+  Image
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Spinner } from '@/components/ui/spinner';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -27,7 +29,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const location = useLocation();
   
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
   }
   
   if (!user || !isAdmin) {
@@ -37,6 +43,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: Globe },
     { name: "Content Management", href: "/admin/content", icon: FileText },
+    { name: "Gallery", href: "/admin/gallery", icon: Image },
     { name: "Data Sources", href: "/admin/data-sources", icon: Globe },
     { name: "Chatbot Configuration", href: "/admin/chatbot", icon: MessageSquare },
   ];
