@@ -28,7 +28,7 @@ import { Spinner } from '@/components/ui/spinner';
 type GalleryItem = {
   id: string;
   title: string;
-  description: string | null;
+  description: string;
   image_url: string;
   created_at: string;
 };
@@ -55,7 +55,7 @@ const Gallery = () => {
       const { data, error } = await supabase
         .from('gallery')
         .select('*')
-        .order('created_at', { ascending: false }) as { data: GalleryItem[] | null, error: any };
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setGalleryItems(data || []);
@@ -149,7 +149,7 @@ const Gallery = () => {
             description: currentItem.description || '',
             image_url: imageUrl
           }
-        ]) as { error: any };
+        ]);
 
       if (error) throw error;
       
@@ -196,7 +196,7 @@ const Gallery = () => {
           description: currentItem.description || '',
           image_url: imageUrl
         })
-        .eq('id', currentItem.id) as { error: any };
+        .eq('id', currentItem.id);
 
       if (error) throw error;
       
@@ -227,7 +227,7 @@ const Gallery = () => {
       const { error } = await supabase
         .from('gallery')
         .delete()
-        .eq('id', currentItem.id) as { error: any };
+        .eq('id', currentItem.id);
 
       if (error) throw error;
       

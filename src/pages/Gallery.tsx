@@ -9,7 +9,7 @@ import { Image } from 'lucide-react';
 type GalleryItem = {
   id: string;
   title: string;
-  description: string | null;
+  description: string;
   image_url: string;
   created_at: string;
 };
@@ -28,7 +28,7 @@ const Gallery = () => {
       const { data, error } = await supabase
         .from('gallery')
         .select('*')
-        .order('created_at', { ascending: false }) as { data: GalleryItem[] | null, error: any };
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setGalleryItems(data || []);
