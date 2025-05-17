@@ -8,6 +8,8 @@ import { toast } from '@/components/ui/sonner';
 
 // Gemini API key (Note: In a production environment, this should be stored securely)
 const GEMINI_API_KEY = "AIzaSyDQhPWE_tvA2E0_uZskdCaLe-NUkHDP-PU";
+// Backup API key in case the first one fails
+const BACKUP_API_KEY = "AIzaSyB0XPNSNzXeBatEAXo0iZL9PuQhTUhezTg";
 
 const ChatbotButton = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,8 +53,9 @@ User question: ${userMessage}`
 
   const callGeminiAPI = async (userMessage: string) => {
     try {
+      // First try with the primary API key
       const response = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=" + GEMINI_API_KEY,
+        "https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro:generateContent?key=" + GEMINI_API_KEY,
         {
           method: "POST",
           headers: {
@@ -63,27 +66,62 @@ User question: ${userMessage}`
       );
 
       if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+        console.log(`Primary API failed with status ${response.status}, trying backup API key...`);
+        
+        // If the first key fails, try with the backup API key
+        const backupResponse = await fetch(
+          "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=" + BACKUP_API_KEY,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(generateGeminiPrompt(userMessage)),
+          }
+        );
+
+        if (!backupResponse.ok) {
+          throw new Error(`Both API requests failed. Backup API status: ${backupResponse.status}`);
+        }
+
+        const data = await backupResponse.json();
+        return extractResponseText(data);
       }
 
       const data = await response.json();
-      
-      // Check if we have a valid response with content
-      if (data.candidates && 
-          data.candidates[0] && 
-          data.candidates[0].content && 
-          data.candidates[0].content.parts && 
-          data.candidates[0].content.parts[0] && 
-          data.candidates[0].content.parts[0].text) {
-        return data.candidates[0].content.parts[0].text;
-      } else {
-        console.error("Unexpected API response structure:", JSON.stringify(data));
-        throw new Error("Invalid response format from Gemini API");
-      }
+      return extractResponseText(data);
     } catch (error) {
       console.error("Error calling Gemini API:", error);
-      return "I'm having trouble connecting to my knowledge base right now. Please try again later.";
+      return "I'm having trouble connecting to my knowledge base right now. Please try again in a few moments.";
     }
+  };
+
+  // Helper function to extract text from different possible Gemini API response formats
+  const extractResponseText = (data: any) => {
+    // For gemini-1.0-pro format
+    if (data.candidates && 
+        data.candidates[0] && 
+        data.candidates[0].content && 
+        data.candidates[0].content.parts && 
+        data.candidates[0].content.parts[0] && 
+        data.candidates[0].content.parts[0].text) {
+      return data.candidates[0].content.parts[0].text;
+    }
+    
+    // For gemini-pro format
+    if (data.candidates && 
+        data.candidates[0] && 
+        data.candidates[0].content && 
+        data.candidates[0].content.parts && 
+        data.candidates[0].content.parts.length > 0) {
+      // Find text in the parts
+      for (const part of data.candidates[0].content.parts) {
+        if (part.text) return part.text;
+      }
+    }
+    
+    console.error("Unexpected API response structure:", JSON.stringify(data));
+    throw new Error("Invalid response format from Gemini API");
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -105,7 +143,7 @@ User question: ${userMessage}`
       toast.error("Failed to get a response. Please try again.");
       setConversation(prev => [...prev, { 
         type: 'bot', 
-        text: "I'm having trouble connecting to my knowledge base right now. Please try again later." 
+        text: "I'm having trouble connecting to my knowledge base right now. Please try again in a few moments." 
       }]);
     } finally {
       setIsLoading(false);
