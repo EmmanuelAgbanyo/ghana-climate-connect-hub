@@ -11,6 +11,7 @@ import ResilientLeadership from "./pages/ResilientLeadership";
 import CallToAction from "./pages/CallToAction";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
+import ChatbotButton from "./components/ChatbotButton";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <ChatbotButton />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

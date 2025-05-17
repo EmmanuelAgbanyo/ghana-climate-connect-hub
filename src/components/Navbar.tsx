@@ -4,9 +4,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ChatbotButton from './ChatbotButton';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showChatbot, setShowChatbot] = useState(false);
   const { pathname } = useLocation();
 
   const navItems = [
@@ -58,7 +60,7 @@ const Navbar = () => {
               variant="outline" 
               size="sm" 
               className="ml-2 border-ghana-gold text-ghana-gold hover:bg-ghana-gold/10"
-              onClick={() => console.log("Open chatbot")}
+              onClick={() => document.querySelector<HTMLButtonElement>('button[class*="fixed bottom-6 right-6"]')?.click()}
             >
               Ask ClimateWise
             </Button>
@@ -102,7 +104,7 @@ const Navbar = () => {
               size="sm"
               className="w-full mt-2 border-ghana-gold text-ghana-gold hover:bg-ghana-gold/10"
               onClick={() => {
-                console.log("Open chatbot");
+                document.querySelector<HTMLButtonElement>('button[class*="fixed bottom-6 right-6"]')?.click();
                 setIsOpen(false);
               }}
             >

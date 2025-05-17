@@ -2,44 +2,115 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { MessageSquareText, Send } from 'lucide-react';
+import { MessageSquareText, Send, Loader2 } from 'lucide-react';
 import { Input } from "@/components/ui/input";
+import { toast } from '@/components/ui/sonner';
+
+// Gemini API key (Note: In a production environment, this should be stored securely)
+const GEMINI_API_KEY = "AIzaSyDQhPWE_tvA2E0_uZskdCaLe-NUkHDP-PU";
 
 const ChatbotButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [conversation, setConversation] = useState<{type: 'user' | 'bot', text: string}[]>([
     { type: 'bot', text: "Hello! I'm ClimateWise, your guide to Ghana's climate action. Ask me about NDCs, adaptation strategies, or how you can get involved!" }
   ]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const generateGeminiPrompt = (userMessage: string) => {
+    return {
+      contents: [
+        {
+          parts: [
+            {
+              text: `You are ClimateWise, an AI assistant specializing in Ghana's climate information, policies and adaptation strategies.
+                    
+Background knowledge:
+- Ghana's updated NDCs (2021) include 47 adaptation and mitigation programs
+- Ghana aims to reduce emissions by 64 MtCO2e by 2030
+- Key climate sectors include energy, agriculture, health, and water
+- Major initiatives include the Greater Accra Resilient Integrated Development Project ($200M)
+- Ghana implements climate-smart agriculture and water conservation techniques
+- Ghana experiences flooding in coastal regions and droughts in northern regions
+
+Answer the following question about Ghana's climate situation, policies, or actions. Keep your response informative but concise (under 200 words). If you don't know the specific answer about Ghana, say so and provide general climate information that might be relevant.
+
+User question: ${userMessage}`
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.2,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 1024,
+      }
+    };
+  };
+
+  const callGeminiAPI = async (userMessage: string) => {
+    try {
+      const response = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=" + GEMINI_API_KEY,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(generateGeminiPrompt(userMessage)),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Check if we have a valid response with content
+      if (data.candidates && 
+          data.candidates[0] && 
+          data.candidates[0].content && 
+          data.candidates[0].content.parts && 
+          data.candidates[0].content.parts[0] && 
+          data.candidates[0].content.parts[0].text) {
+        return data.candidates[0].content.parts[0].text;
+      } else {
+        console.error("Unexpected API response structure:", JSON.stringify(data));
+        throw new Error("Invalid response format from Gemini API");
+      }
+    } catch (error) {
+      console.error("Error calling Gemini API:", error);
+      return "I'm having trouble connecting to my knowledge base right now. Please try again later.";
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
     
     // Add user message to conversation
-    setConversation([...conversation, { type: 'user', text: message }]);
+    setConversation(prev => [...prev, { type: 'user', text: message }]);
+    setIsLoading(true);
     
-    // Simulate bot response (this would be replaced with actual AI functionality)
-    setTimeout(() => {
-      let response;
-      const lowerMsg = message.toLowerCase();
+    try {
+      // Get response from Gemini API
+      const aiResponse = await callGeminiAPI(message);
       
-      if (lowerMsg.includes('ndc') || lowerMsg.includes('nationally determined')) {
-        response = "Ghana's updated NDCs (2021) include 47 adaptation and mitigation programs, aiming to reduce emissions by 64 MtCO2e and build resilience for 38 million people by 2030. Key sectors include energy, agriculture, and health.";
-      } else if (lowerMsg.includes('flood') || lowerMsg.includes('flooding')) {
-        response = "Ghana's adaptation strategies for flooding include resilient infrastructure development, early warning systems, and community planning. The Greater Accra Resilient Integrated Development Project ($200M) focuses on flood and waste management.";
-      } else if (lowerMsg.includes('drought')) {
-        response = "To combat droughts, Ghana implements climate-smart agriculture, water conservation techniques, and solar-powered irrigation systems, particularly in the Northern regions.";
-      } else if (lowerMsg.includes('involved') || lowerMsg.includes('help') || lowerMsg.includes('action')) {
-        response = "You can get involved by: 1) Adopting climate-smart practices like water conservation and tree planting, 2) Supporting community action plans, 3) Joining YPO's programs, or 4) Advocating for climate policies.";
-      } else {
-        response = "I'm still learning about Ghana's climate initiatives. Could you rephrase your question about climate policies, adaptation strategies, or how to get involved?";
-      }
-      
-      setConversation(prev => [...prev, { type: 'bot', text: response }]);
-    }, 1000);
-    
-    setMessage('');
+      // Add AI response to conversation
+      setConversation(prev => [...prev, { type: 'bot', text: aiResponse }]);
+    } catch (error) {
+      console.error("Error in chat:", error);
+      toast.error("Failed to get a response. Please try again.");
+      setConversation(prev => [...prev, { 
+        type: 'bot', 
+        text: "I'm having trouble connecting to my knowledge base right now. Please try again later." 
+      }]);
+    } finally {
+      setIsLoading(false);
+      setMessage('');
+    }
   };
 
   return (
@@ -77,6 +148,12 @@ const ChatbotButton = () => {
                 </div>
               </div>
             ))}
+            {isLoading && (
+              <div className="flex justify-center items-center py-2">
+                <Loader2 className="h-6 w-6 text-ghana-green animate-spin" />
+                <span className="ml-2 text-sm text-gray-500">ClimateWise is thinking...</span>
+              </div>
+            )}
           </div>
           
           <SheetFooter className="p-4 border-t">
@@ -86,9 +163,10 @@ const ChatbotButton = () => {
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Ask about Ghana's climate initiatives..."
                 className="flex-1"
+                disabled={isLoading}
               />
-              <Button type="submit" size="icon" disabled={!message.trim()}>
-                <Send size={18} />
+              <Button type="submit" size="icon" disabled={isLoading || !message.trim()}>
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send size={18} />}
               </Button>
             </form>
           </SheetFooter>
