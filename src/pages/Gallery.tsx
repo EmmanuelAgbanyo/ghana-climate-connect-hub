@@ -9,7 +9,7 @@ import { Image } from 'lucide-react';
 type GalleryItem = {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   image_url: string;
   created_at: string;
 };

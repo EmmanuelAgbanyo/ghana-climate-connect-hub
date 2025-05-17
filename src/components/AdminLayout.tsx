@@ -1,5 +1,5 @@
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -27,6 +28,25 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { user, isAdmin, signOut, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    if (!loading && !isAdmin) {
+      if (user) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have admin privileges",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Authentication Required",
+          description: "Please login to access admin area",
+          variant: "destructive"
+        });
+      }
+    }
+  }, [loading, isAdmin, user, toast]);
   
   if (loading) {
     return (

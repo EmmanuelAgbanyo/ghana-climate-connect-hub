@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/AdminLayout';
@@ -28,7 +27,7 @@ import { Spinner } from '@/components/ui/spinner';
 type GalleryItem = {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   image_url: string;
   created_at: string;
 };
