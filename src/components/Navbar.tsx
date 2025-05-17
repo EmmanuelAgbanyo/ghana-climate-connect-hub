@@ -2,14 +2,12 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, UserCircle } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { pathname } = useLocation();
-  const { user, isAdmin, signOut } = useAuth();
 
   const navItems = [
     { label: "Home", path: "/" },
@@ -56,42 +54,6 @@ const Navbar = () => {
                 {item.label}
               </Link>
             ))}
-
-            {user ? (
-              <div className="flex items-center ml-4 space-x-2">
-                {isAdmin && (
-                  <Link to="/admin">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="border-ghana-green text-ghana-green hover:bg-ghana-green/10"
-                    >
-                      Admin Panel
-                    </Button>
-                  </Link>
-                )}
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => signOut()}
-                  className="text-gray-600 hover:text-red-600"
-                >
-                  Sign Out
-                </Button>
-              </div>
-            ) : (
-              <Link to="/auth">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="ml-2 border-ghana-green text-ghana-green hover:bg-ghana-green/10"
-                >
-                  <UserCircle className="h-4 w-4 mr-2" />
-                  Sign In
-                </Button>
-              </Link>
-            )}
-
             <Button 
               variant="outline" 
               size="sm" 
@@ -135,40 +97,6 @@ const Navbar = () => {
                 {item.label}
               </Link>
             ))}
-
-            {user ? (
-              <>
-                {isAdmin && (
-                  <Link 
-                    to="/admin"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-ghana-green hover:bg-green-50"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Admin Panel
-                  </Link>
-                )}
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  className="w-full justify-start px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50"
-                  onClick={() => {
-                    signOut();
-                    setIsOpen(false);
-                  }}
-                >
-                  Sign Out
-                </Button>
-              </>
-            ) : (
-              <Link
-                to="/auth"
-                className="block px-3 py-2 rounded-md text-base font-medium text-ghana-green hover:bg-green-50"
-                onClick={() => setIsOpen(false)}
-              >
-                Sign In
-              </Link>
-            )}
-            
             <Button 
               variant="outline"
               size="sm"
