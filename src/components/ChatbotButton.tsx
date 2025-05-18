@@ -6,8 +6,8 @@ import { MessageSquareText, Send, Loader2 } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { toast } from '@/components/ui/sonner';
 
-// Update the API endpoint and version for Google AI Studio
-const API_KEY = "AIzaSyDQhPWE_tvA2E0_uZskdCaLe-NUkHDP-PU";
+// Updated API key for Google AI Studio
+const API_KEY = "AIzaSyD0EKos8Z5a5lQyvt_Tg85j_7D_ZTI5sc4";
 
 const ChatbotButton = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,7 +46,7 @@ User question: ${userMessage}`
 
   const callGoogleAI = async (userMessage: string) => {
     try {
-      // Updated API endpoint to use the correct version and method
+      // Using the correct API endpoint for the model
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
         {
@@ -59,6 +59,7 @@ User question: ${userMessage}`
       );
 
       if (!response.ok) {
+        console.error(`API request failed with status ${response.status}`);
         throw new Error(`API request failed with status ${response.status}`);
       }
 
@@ -71,7 +72,7 @@ User question: ${userMessage}`
     }
   };
 
-  // Updated helper function to extract text from the v1beta response format
+  // Helper function to extract text from the v1beta response format
   const extractResponseText = (data: any) => {
     try {
       if (data && 
@@ -85,6 +86,7 @@ User question: ${userMessage}`
         }
       }
       
+      console.error("Unexpected API response structure:", JSON.stringify(data));
       throw new Error("Unexpected API response structure");
     } catch (error) {
       console.error("Error extracting response:", error, JSON.stringify(data));

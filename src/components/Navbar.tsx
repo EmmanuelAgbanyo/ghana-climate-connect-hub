@@ -32,7 +32,7 @@ const Navbar = () => {
                 <span className="text-white font-bold text-lg">CIC</span>
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-ghana-green text-lg leading-tight text-opacity-100">Climate Information Centre</span>
+                <span className="font-bold text-ghana-green text-lg leading-none">Climate Information Centre</span>
                 <span className="block text-xs text-gray-600 font-medium">Ghana</span>
               </div>
             </Link>
