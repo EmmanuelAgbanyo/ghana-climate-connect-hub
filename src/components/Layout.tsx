@@ -2,7 +2,7 @@
 import { ReactNode } from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import ChatbotButton from './ChatbotButton';
+// Removed the duplicate ChatbotButton import
 
 interface LayoutProps {
   children: ReactNode;
@@ -15,7 +15,7 @@ const Layout = ({ children }: LayoutProps) => {
       <main className="flex-grow">
         {children}
       </main>
-      <ChatbotButton />
+      {/* Removed duplicate ChatbotButton */}
       <Footer />
     </div>
   );

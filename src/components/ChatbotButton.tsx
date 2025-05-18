@@ -6,10 +6,8 @@ import { MessageSquareText, Send, Loader2 } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { toast } from '@/components/ui/sonner';
 
-// Gemini API key (Note: In a production environment, this should be stored securely)
-const GEMINI_API_KEY = "AIzaSyDQhPWE_tvA2E0_uZskdCaLe-NUkHDP-PU";
-// Backup API key in case the first one fails
-const BACKUP_API_KEY = "AIzaSyB0XPNSNzXeBatEAXo0iZL9PuQhTUhezTg";
+// Google AI Studio API key (Note: In a production environment, this should be stored securely)
+const API_KEY = "AIzaSyDQhPWE_tvA2E0_uZskdCaLe-NUkHDP-PU";
 
 const ChatbotButton = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,7 +17,7 @@ const ChatbotButton = () => {
     { type: 'bot', text: "Hello! I'm ClimateWise, your guide to Ghana's climate action. Ask me about NDCs, adaptation strategies, or how you can get involved!" }
   ]);
 
-  const generateGeminiPrompt = (userMessage: string) => {
+  const generatePrompt = (userMessage: string) => {
     return {
       contents: [
         {
@@ -51,77 +49,46 @@ User question: ${userMessage}`
     };
   };
 
-  const callGeminiAPI = async (userMessage: string) => {
+  const callGoogleAI = async (userMessage: string) => {
     try {
-      // First try with the primary API key
       const response = await fetch(
-        "https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro:generateContent?key=" + GEMINI_API_KEY,
+        `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${API_KEY}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(generateGeminiPrompt(userMessage)),
+          body: JSON.stringify(generatePrompt(userMessage)),
         }
       );
 
       if (!response.ok) {
-        console.log(`Primary API failed with status ${response.status}, trying backup API key...`);
-        
-        // If the first key fails, try with the backup API key
-        const backupResponse = await fetch(
-          "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=" + BACKUP_API_KEY,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(generateGeminiPrompt(userMessage)),
-          }
-        );
-
-        if (!backupResponse.ok) {
-          throw new Error(`Both API requests failed. Backup API status: ${backupResponse.status}`);
-        }
-
-        const data = await backupResponse.json();
-        return extractResponseText(data);
+        throw new Error(`API request failed with status ${response.status}`);
       }
 
       const data = await response.json();
       return extractResponseText(data);
     } catch (error) {
-      console.error("Error calling Gemini API:", error);
+      console.error("Error calling Google AI API:", error);
       return "I'm having trouble connecting to my knowledge base right now. Please try again in a few moments.";
     }
   };
 
-  // Helper function to extract text from different possible Gemini API response formats
+  // Helper function to extract text from response format
   const extractResponseText = (data: any) => {
-    // For gemini-1.0-pro format
     if (data.candidates && 
         data.candidates[0] && 
         data.candidates[0].content && 
-        data.candidates[0].content.parts && 
-        data.candidates[0].content.parts[0] && 
-        data.candidates[0].content.parts[0].text) {
-      return data.candidates[0].content.parts[0].text;
-    }
-    
-    // For gemini-pro format
-    if (data.candidates && 
-        data.candidates[0] && 
-        data.candidates[0].content && 
-        data.candidates[0].content.parts && 
-        data.candidates[0].content.parts.length > 0) {
-      // Find text in the parts
+        data.candidates[0].content.parts) {
+      
+      // Check all parts for text content
       for (const part of data.candidates[0].content.parts) {
         if (part.text) return part.text;
       }
     }
     
     console.error("Unexpected API response structure:", JSON.stringify(data));
-    throw new Error("Invalid response format from Gemini API");
+    throw new Error("Invalid response format from Google AI API");
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -133,8 +100,8 @@ User question: ${userMessage}`
     setIsLoading(true);
     
     try {
-      // Get response from Gemini API
-      const aiResponse = await callGeminiAPI(message);
+      // Get response from Google AI
+      const aiResponse = await callGoogleAI(message);
       
       // Add AI response to conversation
       setConversation(prev => [...prev, { type: 'bot', text: aiResponse }]);

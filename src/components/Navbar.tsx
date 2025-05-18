@@ -4,11 +4,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import ChatbotButton from './ChatbotButton';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [showChatbot, setShowChatbot] = useState(false);
   const { pathname } = useLocation();
 
   const navItems = [
@@ -33,9 +31,9 @@ const Navbar = () => {
               <div className="w-10 h-10 flex items-center justify-center rounded-full bg-ghana-green">
                 <span className="text-white font-bold text-lg">CIC</span>
               </div>
-              <div>
-                <span className="font-bold text-ghana-green text-lg">Climate Information Centre</span>
-                <span className="block text-xs text-gray-600">Ghana</span>
+              <div className="flex flex-col">
+                <span className="font-bold text-ghana-green text-lg leading-tight">Climate Information Centre</span>
+                <span className="block text-xs text-gray-600 font-medium">Ghana</span>
               </div>
             </Link>
           </div>
