@@ -6,8 +6,8 @@ import { MessageSquareText, Send, Loader2 } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { toast } from '@/components/ui/sonner';
 
-// Updated API key for Google AI Studio
-const API_KEY = "AIzaSyD0EKos8Z5a5lQyvt_Tg85j_7D_ZTI5sc4";
+// Original API key
+const API_KEY = "AIzaSyDQhPWE_tvA2E0_uZskdCaLe-NUkHDP-PU";
 
 const ChatbotButton = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,7 +46,7 @@ User question: ${userMessage}`
 
   const callGoogleAI = async (userMessage: string) => {
     try {
-      // Using the correct API endpoint for the model
+      // Original API endpoint
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
         {
