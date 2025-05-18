@@ -6,7 +6,7 @@ import { MessageSquareText, Send, Loader2 } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { toast } from '@/components/ui/sonner';
 
-// Google AI Studio API key (Note: In a production environment, this should be stored securely)
+// Update the API endpoint and version for Google AI Studio
 const API_KEY = "AIzaSyDQhPWE_tvA2E0_uZskdCaLe-NUkHDP-PU";
 
 const ChatbotButton = () => {
@@ -21,6 +21,7 @@ const ChatbotButton = () => {
     return {
       contents: [
         {
+          role: "user",
           parts: [
             {
               text: `You are ClimateWise, an AI assistant specializing in Ghana's climate information, policies and adaptation strategies.
@@ -39,20 +40,15 @@ User question: ${userMessage}`
             }
           ]
         }
-      ],
-      generationConfig: {
-        temperature: 0.2,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024,
-      }
+      ]
     };
   };
 
   const callGoogleAI = async (userMessage: string) => {
     try {
+      // Updated API endpoint to use the correct version and method
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
         {
           method: "POST",
           headers: {
@@ -70,25 +66,30 @@ User question: ${userMessage}`
       return extractResponseText(data);
     } catch (error) {
       console.error("Error calling Google AI API:", error);
-      return "I'm having trouble connecting to my knowledge base right now. Please try again in a few moments.";
+      // Provide a more helpful error message with fallback information
+      return "I'm currently experiencing technical difficulties connecting to my knowledge base. While I'm getting fixed, here are some key facts about Ghana's climate action: Ghana aims to reduce emissions by 64 MtCO2e by 2030 through 47 adaptation and mitigation programs focusing on energy, agriculture, health, and water sectors.";
     }
   };
 
-  // Helper function to extract text from response format
+  // Updated helper function to extract text from the v1beta response format
   const extractResponseText = (data: any) => {
-    if (data.candidates && 
-        data.candidates[0] && 
-        data.candidates[0].content && 
-        data.candidates[0].content.parts) {
-      
-      // Check all parts for text content
-      for (const part of data.candidates[0].content.parts) {
-        if (part.text) return part.text;
+    try {
+      if (data && 
+          data.candidates && 
+          data.candidates[0] && 
+          data.candidates[0].content && 
+          data.candidates[0].content.parts) {
+        
+        for (const part of data.candidates[0].content.parts) {
+          if (part.text) return part.text;
+        }
       }
+      
+      throw new Error("Unexpected API response structure");
+    } catch (error) {
+      console.error("Error extracting response:", error, JSON.stringify(data));
+      return "I couldn't process that response correctly. Please try asking something else about Ghana's climate initiatives.";
     }
-    
-    console.error("Unexpected API response structure:", JSON.stringify(data));
-    throw new Error("Invalid response format from Google AI API");
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
