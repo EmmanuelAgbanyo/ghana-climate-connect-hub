@@ -1,6 +1,6 @@
 
-import { ReactNode, useState } from 'react';
-import { Navigate, Link, useLocation } from 'react-router-dom';
+import { ReactNode, useState, useEffect } from 'react';
+import { Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   ChevronDown, 
@@ -12,12 +12,14 @@ import {
   Settings, 
   Users, 
   X,
-  Image
+  Image,
+  Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -27,6 +29,19 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { user, isAdmin, signOut, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    // Verify admin access on route change
+    if (!loading && (!user || !isAdmin)) {
+      toast({
+        title: "Access Denied",
+        description: "You must be logged in as an administrator to access this area.",
+        variant: "destructive"
+      });
+    }
+  }, [location.pathname, loading, user, isAdmin, toast]);
   
   if (loading) {
     return (
@@ -73,7 +88,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-center h-16 px-4 border-b border-white/10">
-            <h2 className="text-xl font-bold">CIC Admin</h2>
+            <Shield className="h-5 w-5 mr-2" />
+            <h2 className="text-xl font-bold">Admin Portal</h2>
           </div>
 
           <ScrollArea className="flex-grow">
@@ -110,19 +126,33 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     {user?.email}
                   </p>
                   <p className="text-xs text-white/70 truncate">
-                    Admin User
+                    Administrator
                   </p>
                 </div>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={signOut}
+                onClick={() => {
+                  signOut();
+                  navigate('/');
+                }}
                 className="text-white hover:bg-white/10"
               >
                 <LogOut className="h-5 w-5" />
               </Button>
             </div>
+          </div>
+
+          <div className="border-t border-white/10 p-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="w-full text-white border-white/20 hover:bg-white/10"
+            >
+              Back to Website
+            </Button>
           </div>
         </div>
       </div>

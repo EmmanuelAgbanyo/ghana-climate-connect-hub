@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, UserCircle } from 'lucide-react';
+import { Menu, X, UserCircle, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -17,6 +17,7 @@ const Navbar = () => {
     { label: "Adaptation Campaigns", path: "/adaptation-campaigns" },
     { label: "Resilient Leadership", path: "/resilient-leadership" },
     { label: "Take Action", path: "/call-to-action" },
+    { label: "Gallery", path: "/gallery" },
     { label: "Contact", path: "/contact" },
   ];
 
@@ -66,6 +67,7 @@ const Navbar = () => {
                       size="sm" 
                       className="border-ghana-green text-ghana-green hover:bg-ghana-green/10"
                     >
+                      <Shield className="h-4 w-4 mr-2" />
                       Admin Panel
                     </Button>
                   </Link>
@@ -86,20 +88,11 @@ const Navbar = () => {
                   size="sm" 
                   className="ml-2 border-ghana-green text-ghana-green hover:bg-ghana-green/10"
                 >
-                  <UserCircle className="h-4 w-4 mr-2" />
-                  Sign In
+                  <Shield className="h-4 w-4 mr-2" />
+                  Admin Portal
                 </Button>
               </Link>
             )}
-
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="ml-2 border-ghana-gold text-ghana-gold hover:bg-ghana-gold/10"
-              onClick={() => console.log("Open chatbot")}
-            >
-              Ask ClimateWise
-            </Button>
           </div>
           
           {/* Mobile menu button */}
@@ -144,7 +137,10 @@ const Navbar = () => {
                     className="block px-3 py-2 rounded-md text-base font-medium text-ghana-green hover:bg-green-50"
                     onClick={() => setIsOpen(false)}
                   >
-                    Admin Panel
+                    <div className="flex items-center">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Admin Panel
+                    </div>
                   </Link>
                 )}
                 <Button 
@@ -165,21 +161,12 @@ const Navbar = () => {
                 className="block px-3 py-2 rounded-md text-base font-medium text-ghana-green hover:bg-green-50"
                 onClick={() => setIsOpen(false)}
               >
-                Sign In
+                <div className="flex items-center">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Admin Portal
+                </div>
               </Link>
             )}
-            
-            <Button 
-              variant="outline"
-              size="sm"
-              className="w-full mt-2 border-ghana-gold text-ghana-gold hover:bg-ghana-gold/10"
-              onClick={() => {
-                console.log("Open chatbot");
-                setIsOpen(false);
-              }}
-            >
-              Ask ClimateWise
-            </Button>
           </div>
         </div>
       )}
