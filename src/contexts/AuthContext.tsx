@@ -9,7 +9,6 @@ type AuthContextType = {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
 };
@@ -84,26 +83,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
     } catch (error: any) {
       toast({
-        title: "Error signing in",
-        description: error.message || "An error occurred during sign in",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-
-  const signUp = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) throw error;
-      toast({
-        title: "Success!",
-        description: "Registration successful. Please check your email to confirm your account.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error signing up",
-        description: error.message || "An error occurred during registration",
+        title: "Authentication Error",
+        description: error.message || "Invalid admin credentials",
         variant: "destructive"
       });
       throw error;
@@ -131,7 +112,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     session,
     loading,
     signIn,
-    signUp,
     signOut,
     isAdmin,
   };

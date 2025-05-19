@@ -1,8 +1,44 @@
 
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import GhanaClimateInfo from '@/components/GhanaClimateInfo';
+import { Spinner } from '@/components/ui/spinner';
+
+type ClimateContent = {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  source_url: string | null;
+};
 
 const ClimateInformation = () => {
+  const [climateContent, setClimateContent] = useState<ClimateContent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchClimateContent();
+  }, []);
+
+  const fetchClimateContent = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('climate_content')
+        .select('*')
+        .order('last_updated', { ascending: false });
+
+      if (error) throw error;
+      setClimateContent(data || []);
+    } catch (error) {
+      console.error('Error fetching climate content:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="container mx-auto py-12 px-4 sm:px-6">
@@ -15,71 +51,45 @@ const ClimateInformation = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Climate Change in Ghana</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4">
-                Ghana is experiencing rising temperatures, changing rainfall patterns, and more 
-                frequent extreme weather events due to climate change.
-              </p>
-              <p>
-                Average temperatures have increased by 1°C since 1960, with projections indicating 
-                a further rise of 1.5-3°C by 2050.
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Coastal Impacts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4">
-                Ghana's 550km coastline is highly vulnerable to sea-level rise, with projections 
-                indicating a rise of 13-21cm by 2050.
-              </p>
-              <p>
-                Coastal erosion already affects 80% of Ghana's shoreline, threatening communities, 
-                infrastructure, and ecosystems.
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Agriculture & Food Security</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4">
-                Climate change threatens agricultural productivity, with yield reductions of up to 40% 
-                projected for major crops like maize and rice.
-              </p>
-              <p>
-                Smallholder farmers, who make up 80% of Ghana's agricultural sector, are particularly 
-                vulnerable due to limited adaptive capacity.
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Water Resources</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4">
-                River systems including the Volta, Pra, and Ankobra are experiencing changing flow 
-                patterns and increased sedimentation due to climate change.
-              </p>
-              <p>
-                Projections indicate a 20-30% reduction in water availability in some regions by 2050, 
-                affecting drinking water access and hydropower generation.
-              </p>
-            </CardContent>
-          </Card>
+        <div className="mb-10">
+          <GhanaClimateInfo />
         </div>
+        
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Spinner size="lg" />
+          </div>
+        ) : climateContent.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            {climateContent.map((item) => (
+              <Card key={item.id}>
+                <CardHeader>
+                  <CardTitle>{item.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="whitespace-pre-line">{item.content}</p>
+                  {item.source_url && (
+                    <a 
+                      href={item.source_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-ghana-green hover:underline mt-4 block text-sm"
+                    >
+                      Source: Learn more
+                    </a>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center p-8 border rounded-md bg-muted/50 max-w-3xl mx-auto">
+            <p className="text-lg font-medium">No climate information available yet.</p>
+            <p className="text-muted-foreground mt-2">
+              Stay tuned for updates on climate change impacts and adaptation strategies in Ghana.
+            </p>
+          </div>
+        )}
       </div>
     </Layout>
   );
