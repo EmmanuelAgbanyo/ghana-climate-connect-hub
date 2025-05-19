@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,9 +28,18 @@ const authFormSchema = z.object({
 type AuthFormValues = z.infer<typeof authFormSchema>;
 
 const Auth = () => {
-  const { user, signIn } = useAuth();
+  const { user, signIn, isAdmin } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  
+  // Check if user is already signed in and is admin
+  useEffect(() => {
+    if (user && isAdmin) {
+      console.log("User is authenticated and is admin, redirecting to dashboard");
+      navigate('/admin');
+    }
+  }, [user, isAdmin, navigate]);
 
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(authFormSchema),
@@ -41,21 +50,25 @@ const Auth = () => {
   });
 
   const onSubmit = async (data: AuthFormValues) => {
+    console.log("Attempting to sign in with:", data.email);
     setIsLoading(true);
     setAuthError(null);
     try {
       await signIn(data.email, data.password);
+      // Auth state will be updated via the auth state listener in AuthContext
+      console.log("Sign-in successful");
     } catch (error: any) {
       console.error('Authentication error:', error);
-      setAuthError('Invalid credentials. Please check your email and password.');
+      setAuthError(error.message || 'Invalid credentials. Please check your email and password.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (user) {
-    return <Navigate to="/admin" replace />;
-  }
+  // This was causing a race condition - we'll use the useEffect hook instead
+  // if (user && isAdmin) {
+  //   return <Navigate to="/admin" replace />;
+  // }
 
   return (
     <Layout>

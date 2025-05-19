@@ -33,15 +33,19 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { toast } = useToast();
   
   useEffect(() => {
+    console.log("AdminLayout render - auth state:", { user: !!user, isAdmin, loading });
+    
     // Verify admin access on route change
     if (!loading && (!user || !isAdmin)) {
+      console.log("Access denied, redirecting to auth page");
       toast({
         title: "Access Denied",
         description: "You must be logged in as an administrator to access this area.",
         variant: "destructive"
       });
+      navigate('/auth');
     }
-  }, [location.pathname, loading, user, isAdmin, toast]);
+  }, [location.pathname, loading, user, isAdmin, toast, navigate]);
   
   if (loading) {
     return (
@@ -52,6 +56,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   }
   
   if (!user || !isAdmin) {
+    console.log("Redirecting to auth page from AdminLayout");
     return <Navigate to="/auth" replace />;
   }
 
