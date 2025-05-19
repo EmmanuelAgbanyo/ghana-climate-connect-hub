@@ -1,123 +1,114 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { MessageSquareText, Send, Loader2 } from 'lucide-react';
+import { MessageSquareText, Send } from 'lucide-react';
 import { Input } from "@/components/ui/input";
-import { toast } from '@/components/ui/sonner';
+import { Spinner } from "@/components/ui/spinner";
+import { supabase } from '@/integrations/supabase/client';
 
-// Original API key
-const API_KEY = "AIzaSyDQhPWE_tvA2E0_uZskdCaLe-NUkHDP-PU";
+// Google AI API key
+const GOOGLE_AI_API_KEY = "AIzaSyDQhPWE_tvA2E0_uZskdCaLe-NUkHDP-PU";
+
+type ChatMessage = {
+  type: 'user' | 'bot';
+  text: string;
+};
 
 const ChatbotButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [conversation, setConversation] = useState<{type: 'user' | 'bot', text: string}[]>([
+  const [conversation, setConversation] = useState<ChatMessage[]>([
     { type: 'bot', text: "Hello! I'm ClimateWise, your guide to Ghana's climate action. Ask me about NDCs, adaptation strategies, or how you can get involved!" }
   ]);
-
-  const generatePrompt = (userMessage: string) => {
-    return {
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: `You are ClimateWise, an AI assistant specializing in Ghana's climate information, policies and adaptation strategies.
-                    
-Background knowledge:
-- Ghana's updated NDCs (2021) include 47 adaptation and mitigation programs
-- Ghana aims to reduce emissions by 64 MtCO2e by 2030
-- Key climate sectors include energy, agriculture, health, and water
-- Major initiatives include the Greater Accra Resilient Integrated Development Project ($200M)
-- Ghana implements climate-smart agriculture and water conservation techniques
-- Ghana experiences flooding in coastal regions and droughts in northern regions
-
-Answer the following question about Ghana's climate situation, policies, or actions. Keep your response informative but concise (under 200 words). If you don't know the specific answer about Ghana, say so and provide general climate information that might be relevant.
-
-User question: ${userMessage}`
-            }
-          ]
-        }
-      ]
-    };
-  };
-
-  const callGoogleAI = async (userMessage: string) => {
-    try {
-      // Original API endpoint
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(generatePrompt(userMessage)),
-        }
-      );
-
-      if (!response.ok) {
-        console.error(`API request failed with status ${response.status}`);
-        throw new Error(`API request failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      return extractResponseText(data);
-    } catch (error) {
-      console.error("Error calling Google AI API:", error);
-      // Provide a more helpful error message with fallback information
-      return "I'm currently experiencing technical difficulties connecting to my knowledge base. While I'm getting fixed, here are some key facts about Ghana's climate action: Ghana aims to reduce emissions by 64 MtCO2e by 2030 through 47 adaptation and mitigation programs focusing on energy, agriculture, health, and water sectors.";
-    }
-  };
-
-  // Helper function to extract text from the v1beta response format
-  const extractResponseText = (data: any) => {
-    try {
-      if (data && 
-          data.candidates && 
-          data.candidates[0] && 
-          data.candidates[0].content && 
-          data.candidates[0].content.parts) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [climateContent, setClimateContent] = useState<any[]>([]);
+  
+  useEffect(() => {
+    // Fetch climate content from Supabase to use as context
+    const fetchClimateContent = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('climate_content')
+          .select('title, content, category')
+          .limit(10);
         
-        for (const part of data.candidates[0].content.parts) {
-          if (part.text) return part.text;
-        }
+        if (error) throw error;
+        setClimateContent(data || []);
+      } catch (error) {
+        console.error('Error fetching climate content:', error);
       }
-      
-      console.error("Unexpected API response structure:", JSON.stringify(data));
-      throw new Error("Unexpected API response structure");
-    } catch (error) {
-      console.error("Error extracting response:", error, JSON.stringify(data));
-      return "I couldn't process that response correctly. Please try asking something else about Ghana's climate initiatives.";
-    }
-  };
+    };
+    
+    fetchClimateContent();
+  }, []);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || isLoading) return;
     
     // Add user message to conversation
-    setConversation(prev => [...prev, { type: 'user', text: message }]);
+    const userMessage = message.trim();
+    setConversation([...conversation, { type: 'user', text: userMessage }]);
+    setMessage('');
     setIsLoading(true);
     
     try {
-      // Get response from Google AI
-      const aiResponse = await callGoogleAI(message);
+      // Prepare context from our climate content
+      const contextFromDb = climateContent.map(item => 
+        `${item.title}: ${item.content.substring(0, 200)}...`
+      ).join('\n\n');
       
-      // Add AI response to conversation
-      setConversation(prev => [...prev, { type: 'bot', text: aiResponse }]);
+      // Prepare prompt with context
+      const prompt = `
+You are ClimateWise, an AI assistant specialized in Ghana's climate information. 
+Use this context about Ghana's climate initiatives if relevant:
+${contextFromDb}
+
+User question: ${userMessage}
+      `;
+      
+      // Call Google AI API
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": GOOGLE_AI_API_KEY
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: prompt }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024
+          }
+        })
+      });
+      
+      const data = await response.json();
+      
+      // Extract and process the response
+      let botMessage = "I'm sorry, I couldn't generate a response at this time.";
+      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+        botMessage = data.candidates[0].content.parts[0].text;
+      }
+      
+      // Add bot message to conversation
+      setConversation(prev => [...prev, { type: 'bot', text: botMessage }]);
     } catch (error) {
-      console.error("Error in chat:", error);
-      toast.error("Failed to get a response. Please try again.");
+      console.error('Error with AI chatbot:', error);
       setConversation(prev => [...prev, { 
         type: 'bot', 
-        text: "I'm having trouble connecting to my knowledge base right now. Please try again in a few moments." 
+        text: "I'm having trouble connecting right now. Please try again later." 
       }]);
     } finally {
       setIsLoading(false);
-      setMessage('');
     }
   };
 
@@ -157,9 +148,12 @@ User question: ${userMessage}`
               </div>
             ))}
             {isLoading && (
-              <div className="flex justify-center items-center py-2">
-                <Loader2 className="h-6 w-6 text-ghana-green animate-spin" />
-                <span className="ml-2 text-sm text-gray-500">ClimateWise is thinking...</span>
+              <div className="flex justify-start">
+                <div className="bg-gray-100 rounded-lg px-4 py-2 flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-ghana-green rounded-full animate-pulse"></div>
+                  <div className="w-3 h-3 bg-ghana-green rounded-full animate-pulse delay-150"></div>
+                  <div className="w-3 h-3 bg-ghana-green rounded-full animate-pulse delay-300"></div>
+                </div>
               </div>
             )}
           </div>
@@ -173,8 +167,8 @@ User question: ${userMessage}`
                 className="flex-1"
                 disabled={isLoading}
               />
-              <Button type="submit" size="icon" disabled={isLoading || !message.trim()}>
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send size={18} />}
+              <Button type="submit" size="icon" disabled={!message.trim() || isLoading}>
+                <Send size={18} />
               </Button>
             </form>
           </SheetFooter>
