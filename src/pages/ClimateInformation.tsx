@@ -1,65 +1,12 @@
 
 import Layout from '@/components/Layout';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Spinner } from '@/components/ui/spinner';
-import GhanaClimateInfo from '@/components/GhanaClimateInfo';
-
-type ClimateContent = {
-  id: string;
-  title: string;
-  content: string;
-  category: string;
-  source_url: string | null;
-};
-
-const categories = [
-  'Climate Change',
-  'Adaptation Strategies',
-  'Mitigation',
-  'Policy',
-  'Community Action',
-  'Education',
-  'Research',
-  'Other'
-];
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const ClimateInformation = () => {
-  const [contentList, setContentList] = useState<ClimateContent[]>([]);
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchContent();
-  }, []);
-
-  const fetchContent = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('climate_content')
-        .select('*')
-        .order('last_updated', { ascending: false });
-      
-      if (error) throw error;
-      setContentList(data || []);
-    } catch (error) {
-      console.error('Error fetching climate content:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const filteredContent = activeCategory === 'all' 
-    ? contentList 
-    : contentList.filter(item => item.category === activeCategory);
-
   return (
     <Layout>
       <div className="container mx-auto py-12 px-4 sm:px-6">
-        <h1 className="text-3xl font-bold text-ghana-green text-center mb-6">Climate Information</h1>
+        <h1 className="text-3xl font-bold text-center mb-6 text-ghana-green">Climate Information</h1>
         
         <div className="max-w-4xl mx-auto mb-12 text-center">
           <p className="text-lg text-gray-600">
@@ -68,74 +15,70 @@ const ClimateInformation = () => {
           </p>
         </div>
         
-        <div className="mb-12">
-          <GhanaClimateInfo />
-        </div>
-        
-        <div className="space-y-6 mt-12">
-          <h2 className="text-2xl font-semibold text-ghana-green">Knowledge Base</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>Climate Change in Ghana</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Ghana is experiencing rising temperatures, changing rainfall patterns, and more 
+                frequent extreme weather events due to climate change.
+              </p>
+              <p>
+                Average temperatures have increased by 1°C since 1960, with projections indicating 
+                a further rise of 1.5-3°C by 2050.
+              </p>
+            </CardContent>
+          </Card>
           
-          <Tabs defaultValue="all" onValueChange={setActiveCategory}>
-            <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
-              <TabsTrigger value="all">All</TabsTrigger>
-              {categories.map((category) => (
-                <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
-              ))}
-            </TabsList>
-            
-            <TabsContent value={activeCategory} className="mt-6">
-              {loading ? (
-                <div className="flex justify-center py-12">
-                  <Spinner size="lg" />
-                </div>
-              ) : filteredContent.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {filteredContent.map((item) => (
-                    <Card key={item.id}>
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle>{item.title}</CardTitle>
-                            <CardDescription className="mt-2">
-                              Category: {item.category}
-                            </CardDescription>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="prose max-w-none">
-                          <div className="whitespace-pre-line text-sm text-gray-600">
-                            {item.content}
-                          </div>
-                          
-                          {item.source_url && (
-                            <div className="mt-4">
-                              <a 
-                                href={item.source_url} 
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-ghana-green hover:underline text-sm"
-                              >
-                                Source / Learn more
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center p-8 bg-muted/30 rounded-md">
-                  <p className="text-muted-foreground">
-                    {activeCategory === 'all' 
-                      ? 'No climate information content found.' 
-                      : `No content found for the ${activeCategory} category.`}
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+          <Card>
+            <CardHeader>
+              <CardTitle>Coastal Impacts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Ghana's 550km coastline is highly vulnerable to sea-level rise, with projections 
+                indicating a rise of 13-21cm by 2050.
+              </p>
+              <p>
+                Coastal erosion already affects 80% of Ghana's shoreline, threatening communities, 
+                infrastructure, and ecosystems.
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Agriculture & Food Security</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Climate change threatens agricultural productivity, with yield reductions of up to 40% 
+                projected for major crops like maize and rice.
+              </p>
+              <p>
+                Smallholder farmers, who make up 80% of Ghana's agricultural sector, are particularly 
+                vulnerable due to limited adaptive capacity.
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Water Resources</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                River systems including the Volta, Pra, and Ankobra are experiencing changing flow 
+                patterns and increased sedimentation due to climate change.
+              </p>
+              <p>
+                Projections indicate a 20-30% reduction in water availability in some regions by 2050, 
+                affecting drinking water access and hydropower generation.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </Layout>
