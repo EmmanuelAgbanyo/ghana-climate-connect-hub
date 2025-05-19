@@ -22,16 +22,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
-import { Edit, Trash2, Plus, Image as ImageIcon, Video } from 'lucide-react';
+import { Edit, Trash2, Plus, Image as ImageIcon } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type GalleryItem = {
   id: string;
@@ -39,7 +31,6 @@ type GalleryItem = {
   description: string;
   image_url: string;
   created_at: string;
-  media_type?: string;
 };
 
 const Gallery = () => {
@@ -49,11 +40,9 @@ const Gallery = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<Partial<GalleryItem>>({});
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(false);
-  const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
-  const [filterTab, setFilterTab] = useState<string>("all");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -69,14 +58,7 @@ const Gallery = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      // Determine media types based on URL extensions
-      const processedData = (data || []).map(item => ({
-        ...item,
-        media_type: getMediaType(item.image_url)
-      }));
-      
-      setGalleryItems(processedData);
+      setGalleryItems(data || []);
     } catch (error: any) {
       console.error('Error fetching gallery items:', error);
       toast({
@@ -89,45 +71,31 @@ const Gallery = () => {
     }
   };
 
-  const getMediaType = (url: string): string => {
-    if (!url) return 'image';
-    const extension = url.split('.').pop()?.toLowerCase();
-    if (['mp4', 'webm', 'ogg', 'mov'].includes(extension || '')) {
-      return 'video';
-    }
-    return 'image';
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setCurrentItem(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    setUploadedFile(file);
-    
-    // Determine the type of file
-    const fileType = file.type.split('/')[0];
-    setMediaType(fileType === 'video' ? 'video' : 'image');
+    setUploadedImage(file);
     
     // Create preview
     const reader = new FileReader();
     reader.onload = () => {
-      setFilePreview(reader.result as string);
+      setImagePreview(reader.result as string);
     };
     reader.readAsDataURL(file);
   };
 
-  const uploadFile = async (file: File): Promise<string> => {
+  const uploadImage = async (file: File): Promise<string> => {
     setUploadProgress(true);
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const folderName = file.type.startsWith('video') ? 'videos' : 'images';
-      const filePath = `gallery/${folderName}/${fileName}`;
+      const filePath = `gallery/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('images')
@@ -138,10 +106,10 @@ const Gallery = () => {
       const { data } = supabase.storage.from('images').getPublicUrl(filePath);
       return data.publicUrl;
     } catch (error: any) {
-      console.error('Error uploading file:', error);
+      console.error('Error uploading image:', error);
       toast({
         title: 'Error',
-        description: 'Failed to upload file.',
+        description: 'Failed to upload image.',
         variant: 'destructive',
       });
       throw error;
@@ -161,13 +129,13 @@ const Gallery = () => {
         return;
       }
 
-      let fileUrl = '';
-      if (uploadedFile) {
-        fileUrl = await uploadFile(uploadedFile);
+      let imageUrl = '';
+      if (uploadedImage) {
+        imageUrl = await uploadImage(uploadedImage);
       } else {
         toast({
-          title: 'Missing file',
-          description: 'Please upload a file for the gallery item.',
+          title: 'Missing image',
+          description: 'Please upload an image for the gallery item.',
           variant: 'destructive',
         });
         return;
@@ -175,11 +143,13 @@ const Gallery = () => {
 
       const { error } = await supabase
         .from('gallery')
-        .insert([{
-          title: currentItem.title,
-          description: currentItem.description || '',
-          image_url: fileUrl
-        }]);
+        .insert([
+          {
+            title: currentItem.title,
+            description: currentItem.description || '',
+            image_url: imageUrl
+          }
+        ]);
 
       if (error) throw error;
       
@@ -190,8 +160,8 @@ const Gallery = () => {
       
       setIsAddDialogOpen(false);
       setCurrentItem({});
-      setUploadedFile(null);
-      setFilePreview(null);
+      setUploadedImage(null);
+      setImagePreview(null);
       fetchGalleryItems();
     } catch (error: any) {
       console.error('Error adding gallery item:', error);
@@ -214,9 +184,9 @@ const Gallery = () => {
         return;
       }
 
-      let fileUrl = currentItem.image_url;
-      if (uploadedFile) {
-        fileUrl = await uploadFile(uploadedFile);
+      let imageUrl = currentItem.image_url;
+      if (uploadedImage) {
+        imageUrl = await uploadImage(uploadedImage);
       }
 
       const { error } = await supabase
@@ -224,7 +194,7 @@ const Gallery = () => {
         .update({
           title: currentItem.title,
           description: currentItem.description || '',
-          image_url: fileUrl
+          image_url: imageUrl
         })
         .eq('id', currentItem.id);
 
@@ -237,8 +207,8 @@ const Gallery = () => {
       
       setIsEditDialogOpen(false);
       setCurrentItem({});
-      setUploadedFile(null);
-      setFilePreview(null);
+      setUploadedImage(null);
+      setImagePreview(null);
       fetchGalleryItems();
     } catch (error: any) {
       console.error('Error updating gallery item:', error);
@@ -281,8 +251,7 @@ const Gallery = () => {
 
   const openEditDialog = (item: GalleryItem) => {
     setCurrentItem(item);
-    setFilePreview(item.image_url);
-    setMediaType(getMediaType(item.image_url) as 'image' | 'video');
+    setImagePreview(item.image_url);
     setIsEditDialogOpen(true);
   };
 
@@ -291,10 +260,6 @@ const Gallery = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const filteredItems = filterTab === 'all' 
-    ? galleryItems 
-    : galleryItems.filter(item => item.media_type === filterTab);
-
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -302,51 +267,36 @@ const Gallery = () => {
           <h1 className="text-3xl font-bold text-ghana-green">Gallery Management</h1>
           <Button onClick={() => {
             setCurrentItem({});
-            setFilePreview(null);
-            setUploadedFile(null);
-            setMediaType('image');
+            setImagePreview(null);
+            setUploadedImage(null);
             setIsAddDialogOpen(true);
           }} className="bg-ghana-green hover:bg-ghana-green/90">
-            <Plus className="h-4 w-4 mr-2" /> Add Media
+            <Plus className="h-4 w-4 mr-2" /> Add Gallery Item
           </Button>
         </div>
-        
-        <Tabs defaultValue="all" value={filterTab} onValueChange={setFilterTab}>
-          <TabsList>
-            <TabsTrigger value="all">All Media</TabsTrigger>
-            <TabsTrigger value="image">Images</TabsTrigger>
-            <TabsTrigger value="video">Videos</TabsTrigger>
-          </TabsList>
-        </Tabs>
         
         {loading ? (
           <div className="flex items-center justify-center p-8">
             <Spinner size="lg" />
           </div>
-        ) : filteredItems.length > 0 ? (
+        ) : galleryItems.length > 0 ? (
           <div className="border rounded-md">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Media</TableHead>
+                  <TableHead>Image</TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Description</TableHead>
-                  <TableHead>Type</TableHead>
                   <TableHead>Added on</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredItems.map((item) => (
+                {galleryItems.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>
                       <div className="h-16 w-20 rounded overflow-hidden">
-                        {item.media_type === 'video' ? (
-                          <video 
-                            src={item.image_url} 
-                            className="h-full w-full object-cover" 
-                          />
-                        ) : item.image_url ? (
+                        {item.image_url ? (
                           <img 
                             src={item.image_url} 
                             alt={item.title} 
@@ -354,11 +304,7 @@ const Gallery = () => {
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center bg-muted">
-                            {item.media_type === 'video' ? (
-                              <Video className="h-6 w-6 text-muted-foreground" />
-                            ) : (
-                              <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                            )}
+                            <ImageIcon className="h-6 w-6 text-muted-foreground" />
                           </div>
                         )}
                       </div>
@@ -366,13 +312,6 @@ const Gallery = () => {
                     <TableCell className="font-medium">{item.title}</TableCell>
                     <TableCell className="max-w-[300px] truncate">
                       {item.description || "-"}
-                    </TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        item.media_type === 'video' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
-                      }`}>
-                        {item.media_type}
-                      </span>
                     </TableCell>
                     <TableCell>
                       {new Date(item.created_at).toLocaleDateString()}
@@ -403,7 +342,7 @@ const Gallery = () => {
           </div>
         ) : (
           <div className="text-center p-8 border rounded-md bg-muted/50">
-            <p>No {filterTab === 'all' ? 'gallery items' : `${filterTab}s`} found. Add some media to get started.</p>
+            <p>No gallery items found. Add some images to get started.</p>
           </div>
         )}
       </div>
@@ -414,7 +353,7 @@ const Gallery = () => {
           <DialogHeader>
             <DialogTitle>Add New Gallery Item</DialogTitle>
             <DialogDescription>
-              Upload images or videos for the gallery section.
+              Upload images for the gallery section.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -425,7 +364,7 @@ const Gallery = () => {
                 name="title"
                 value={currentItem.title || ''}
                 onChange={handleInputChange}
-                placeholder="Enter media title"
+                placeholder="Enter image title"
               />
             </div>
             <div className="grid w-full gap-1.5">
@@ -435,34 +374,26 @@ const Gallery = () => {
                 name="description"
                 value={currentItem.description || ''}
                 onChange={handleInputChange}
-                placeholder="Enter media description"
+                placeholder="Enter image description"
                 className="min-h-[100px]"
               />
             </div>
             <div className="grid w-full gap-1.5">
-              <label htmlFor="media" className="text-sm font-medium">Media File</label>
+              <label htmlFor="image" className="text-sm font-medium">Image</label>
               <div className="flex flex-col items-center gap-4">
                 <Input
-                  id="media"
+                  id="image"
                   type="file"
-                  accept="image/*,video/*"
-                  onChange={handleFileChange}
+                  accept="image/*"
+                  onChange={handleImageChange}
                 />
-                {filePreview && (
+                {imagePreview && (
                   <div className="mt-2 rounded-md overflow-hidden w-full max-h-[200px] flex items-center justify-center">
-                    {mediaType === 'video' ? (
-                      <video 
-                        src={filePreview} 
-                        controls
-                        className="max-w-full max-h-[200px]" 
-                      />
-                    ) : (
-                      <img 
-                        src={filePreview} 
-                        alt="Preview" 
-                        className="max-w-full max-h-[200px] object-contain" 
-                      />
-                    )}
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="max-w-full max-h-[200px] object-contain" 
+                    />
                   </div>
                 )}
               </div>
@@ -478,7 +409,7 @@ const Gallery = () => {
               disabled={uploadProgress}
             >
               {uploadProgress ? <Spinner size="sm" className="mr-2" /> : null}
-              Add Media
+              Add Image
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -514,29 +445,21 @@ const Gallery = () => {
               />
             </div>
             <div className="grid w-full gap-1.5">
-              <label htmlFor="edit-media" className="text-sm font-medium">Media File (optional)</label>
+              <label htmlFor="edit-image" className="text-sm font-medium">Image (optional)</label>
               <div className="flex flex-col items-center gap-4">
                 <Input
-                  id="edit-media"
+                  id="edit-image"
                   type="file"
-                  accept={mediaType === 'video' ? 'video/*' : 'image/*'}
-                  onChange={handleFileChange}
+                  accept="image/*"
+                  onChange={handleImageChange}
                 />
-                {filePreview && (
+                {imagePreview && (
                   <div className="mt-2 rounded-md overflow-hidden w-full max-h-[200px] flex items-center justify-center">
-                    {mediaType === 'video' ? (
-                      <video 
-                        src={filePreview} 
-                        controls
-                        className="max-w-full max-h-[200px]" 
-                      />
-                    ) : (
-                      <img 
-                        src={filePreview} 
-                        alt="Preview" 
-                        className="max-w-full max-h-[200px] object-contain" 
-                      />
-                    )}
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="max-w-full max-h-[200px] object-contain" 
+                    />
                   </div>
                 )}
               </div>

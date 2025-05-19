@@ -17,7 +17,6 @@ const Navbar = () => {
     { label: "Adaptation Campaigns", path: "/adaptation-campaigns" },
     { label: "Resilient Leadership", path: "/resilient-leadership" },
     { label: "Take Action", path: "/call-to-action" },
-    { label: "Gallery", path: "/gallery" },
     { label: "Contact", path: "/contact" },
   ];
 
@@ -58,17 +57,19 @@ const Navbar = () => {
               </Link>
             ))}
 
-            {isAdmin ? (
+            {user ? (
               <div className="flex items-center ml-4 space-x-2">
-                <Link to="/admin">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="border-ghana-green text-ghana-green hover:bg-ghana-green/10"
-                  >
-                    Admin Panel
-                  </Button>
-                </Link>
+                {isAdmin && (
+                  <Link to="/admin">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-ghana-green text-ghana-green hover:bg-ghana-green/10"
+                    >
+                      Admin Panel
+                    </Button>
+                  </Link>
+                )}
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -86,7 +87,7 @@ const Navbar = () => {
                   className="ml-2 border-ghana-green text-ghana-green hover:bg-ghana-green/10"
                 >
                   <UserCircle className="h-4 w-4 mr-2" />
-                  Admin Login
+                  Sign In
                 </Button>
               </Link>
             )}
@@ -135,15 +136,17 @@ const Navbar = () => {
               </Link>
             ))}
 
-            {isAdmin ? (
+            {user ? (
               <>
-                <Link 
-                  to="/admin"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-ghana-green hover:bg-green-50"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Admin Panel
-                </Link>
+                {isAdmin && (
+                  <Link 
+                    to="/admin"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-ghana-green hover:bg-green-50"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Admin Panel
+                  </Link>
+                )}
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -162,7 +165,7 @@ const Navbar = () => {
                 className="block px-3 py-2 rounded-md text-base font-medium text-ghana-green hover:bg-green-50"
                 onClick={() => setIsOpen(false)}
               >
-                Admin Login
+                Sign In
               </Link>
             )}
             
