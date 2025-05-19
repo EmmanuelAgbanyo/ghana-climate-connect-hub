@@ -48,7 +48,7 @@ User question: ${userMessage}`
     try {
       // Original API endpoint
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${AIzaSyD0EKos8Z5a5lQyvt_Tg85j_7D_ZTI5sc4}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
         {
           method: "POST",
           headers: {
