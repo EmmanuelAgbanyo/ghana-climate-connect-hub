@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,7 +39,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  // Simplified admin check function to prevent recursive database calls
+  // Simplified admin check function using the new database function
   const checkAdmin = async (userId: string, userEmail: string) => {
     console.log("Checking admin status for user:", userId);
     
@@ -50,10 +51,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     
     try {
-      // We're not querying admin_users table directly to avoid recursion issues
-      // This is a simplified approach for now
-      setIsAdmin(userEmail === 'admin@climateapp.com');
-      return userEmail === 'admin@climateapp.com';
+      // Call the new is_admin_user function
+      const { data, error } = await supabase.rpc('is_admin_user', { user_id: userId });
+      
+      if (error) {
+        console.error('Error checking admin status:', error);
+        // Fallback for the specific email address
+        setIsAdmin(userEmail === 'admin@climateapp.com');
+        return userEmail === 'admin@climateapp.com';
+      }
+      
+      console.log("Admin status from DB:", data);
+      setIsAdmin(!!data);
+      return !!data;
+      
     } catch (error) {
       console.error('Exception checking admin status:', error);
       

@@ -1,8 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PostgrestResponse } from '@supabase/supabase-js';
 
 type BlogPost = {
   id: string;
@@ -24,13 +24,10 @@ const Blog = () => {
       try {
         setLoading(true);
         
-        // First cast to unknown to avoid TypeScript errors, then cast to the appropriate response type
-        const response = await supabase
-          .from('blog_posts' as any)
+        const { data, error } = await supabase
+          .from('blog_posts')
           .select('*')
-          .order('created_at' as any, { ascending: false }) as PostgrestResponse<unknown>;
-          
-        const { data, error } = response;
+          .order('created_at', { ascending: false });
           
         if (error) {
           throw error;

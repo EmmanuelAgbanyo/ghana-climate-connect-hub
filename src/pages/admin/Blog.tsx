@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/AdminLayout';
@@ -11,7 +12,6 @@ import { Edit, Trash2, Plus, Save } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PostgrestResponse } from '@supabase/supabase-js';
 import {
   Form,
   FormControl,
@@ -54,14 +54,11 @@ const BlogPostAdmin = () => {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      // First cast to unknown to avoid TypeScript errors, then cast to the appropriate response type
-      const response = await supabase
-        .from('blog_posts' as any)
+      const { data, error } = await supabase
+        .from('blog_posts')
         .select('*')
-        .order('created_at' as any, { ascending: false }) as PostgrestResponse<unknown>;
+        .order('created_at', { ascending: false });
       
-      const { data, error } = response;
-
       if (error) {
         throw error;
       }
@@ -84,14 +81,14 @@ const BlogPostAdmin = () => {
     fetchPosts();
   }, []);
 
-  // Handle form submission with improved type safety
+  // Handle form submission
   const onSubmit = async (values: z.infer<typeof blogPostSchema>) => {
     setIsSubmitting(true);
     try {
       if (editing) {
         // Update existing post
         const { error } = await supabase
-          .from('blog_posts' as any)
+          .from('blog_posts')
           .update(values)
           .eq('id', editing);
 
@@ -102,10 +99,10 @@ const BlogPostAdmin = () => {
           description: 'Blog post updated successfully',
         });
       } else {
-        // Create new post - cast to unknown first
+        // Create new post
         const { error } = await supabase
-          .from('blog_posts' as any)
-          .insert([values as unknown as Record<string, unknown>]);
+          .from('blog_posts')
+          .insert([values]);
 
         if (error) throw error;
 
@@ -160,7 +157,7 @@ const BlogPostAdmin = () => {
 
     try {
       const { error } = await supabase
-        .from('blog_posts' as any)
+        .from('blog_posts')
         .delete()
         .eq('id', id);
 

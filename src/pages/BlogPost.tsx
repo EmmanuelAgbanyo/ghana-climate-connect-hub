@@ -30,26 +30,21 @@ const BlogPost = () => {
       try {
         setLoading(true);
         
-        // First cast to PostgrestResponse<unknown> to handle the response properly
-        const response = await supabase
-          .from('blog_posts' as any)
+        const { data, error } = await supabase
+          .from('blog_posts')
           .select('*')
           .eq('id', id)
-          .single() as PostgrestResponse<unknown>;
+          .single();
         
-        const { data, error } = response;
-          
         if (error) {
           throw error;
         }
         
-        // The data here is a single object, not an array, so cast it correctly
-        // First check if data exists
         if (!data) {
           throw new Error('Blog post not found');
         }
         
-        // Safely cast data to our BlogPost type
+        // Now we can safely cast the data since we know it's a single object
         setPost(data as BlogPost);
       } catch (error: any) {
         console.error('Error fetching blog post:', error);
