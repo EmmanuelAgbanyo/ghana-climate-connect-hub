@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { PostgrestResponse } from '@supabase/supabase-js';
 
 type BlogPost = {
   id: string;
@@ -29,16 +29,20 @@ const BlogPost = () => {
       try {
         setLoading(true);
         
-        const { data, error } = await supabase
+        // First cast to unknown to avoid TypeScript errors, then cast to the appropriate response type
+        const response = await supabase
           .from('blog_posts' as any)
           .select('*')
           .eq('id', id)
-          .single();
+          .single() as PostgrestResponse<unknown>;
+        
+        const { data, error } = response;
           
         if (error) {
           throw error;
         }
         
+        // Safely cast data to our BlogPost type after checking for errors
         setPost(data as BlogPost);
       } catch (error: any) {
         console.error('Error fetching blog post:', error);

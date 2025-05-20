@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/AdminLayout';
@@ -12,6 +11,7 @@ import { Edit, Trash2, Plus, Save } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { PostgrestResponse } from '@supabase/supabase-js';
 import {
   Form,
   FormControl,
@@ -50,20 +50,24 @@ const BlogPostAdmin = () => {
     },
   });
 
-  // Fetch all blog posts
+  // Fetch all blog posts with improved type safety
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // First cast to unknown to avoid TypeScript errors, then cast to the appropriate response type
+      const response = await supabase
         .from('blog_posts' as any)
         .select('*')
-        .order('created_at' as any, { ascending: false });
+        .order('created_at' as any, { ascending: false }) as PostgrestResponse<unknown>;
+      
+      const { data, error } = response;
 
       if (error) {
         throw error;
       }
 
-      setPosts(data as BlogPost[] || []);
+      // Safely cast data to our BlogPost type after checking for errors
+      setPosts((data as BlogPost[]) || []);
     } catch (error: any) {
       console.error('Error fetching blog posts:', error);
       toast({
@@ -80,7 +84,7 @@ const BlogPostAdmin = () => {
     fetchPosts();
   }, []);
 
-  // Handle form submission for creating/editing blog posts
+  // Handle form submission with improved type safety
   const onSubmit = async (values: z.infer<typeof blogPostSchema>) => {
     setIsSubmitting(true);
     try {
@@ -98,10 +102,10 @@ const BlogPostAdmin = () => {
           description: 'Blog post updated successfully',
         });
       } else {
-        // Create new post
+        // Create new post - cast to unknown first
         const { error } = await supabase
           .from('blog_posts' as any)
-          .insert([values as any]);
+          .insert([values as unknown as Record<string, unknown>]);
 
         if (error) throw error;
 

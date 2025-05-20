@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { PostgrestResponse } from '@supabase/supabase-js';
 
 type BlogPost = {
   id: string;
@@ -24,18 +24,20 @@ const Blog = () => {
       try {
         setLoading(true);
         
-        // Use the specific type casting to work with our table even though it's not in the TypeScript definitions
-        const { data, error } = await supabase
+        // First cast to unknown to avoid TypeScript errors, then cast to the appropriate response type
+        const response = await supabase
           .from('blog_posts' as any)
           .select('*')
-          .order('created_at' as any, { ascending: false });
+          .order('created_at' as any, { ascending: false }) as PostgrestResponse<unknown>;
+          
+        const { data, error } = response;
           
         if (error) {
           throw error;
         }
         
-        // Cast the data to our BlogPost type
-        setPosts(data as BlogPost[] || []);
+        // Safely cast data to our BlogPost type after checking for errors
+        setPosts((data as BlogPost[]) || []);
       } catch (error: any) {
         console.error('Error fetching blog posts:', error);
         setError(error.message || 'Failed to load blog posts');
