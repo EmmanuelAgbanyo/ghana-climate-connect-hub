@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,7 +30,7 @@ const BlogPost = () => {
       try {
         setLoading(true);
         
-        // First cast to unknown to avoid TypeScript errors, then cast to the appropriate response type
+        // First cast to PostgrestResponse<unknown> to handle the response properly
         const response = await supabase
           .from('blog_posts' as any)
           .select('*')
@@ -42,7 +43,13 @@ const BlogPost = () => {
           throw error;
         }
         
-        // Safely cast data to our BlogPost type after checking for errors
+        // The data here is a single object, not an array, so cast it correctly
+        // First check if data exists
+        if (!data) {
+          throw new Error('Blog post not found');
+        }
+        
+        // Safely cast data to our BlogPost type
         setPost(data as BlogPost);
       } catch (error: any) {
         console.error('Error fetching blog post:', error);
