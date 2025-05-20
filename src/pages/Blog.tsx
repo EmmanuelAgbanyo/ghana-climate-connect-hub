@@ -24,16 +24,18 @@ const Blog = () => {
       try {
         setLoading(true);
         
+        // Use the specific type casting to work with our table even though it's not in the TypeScript definitions
         const { data, error } = await supabase
-          .from('blog_posts')
+          .from('blog_posts' as any)
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at' as any, { ascending: false });
           
         if (error) {
           throw error;
         }
         
-        setPosts(data || []);
+        // Cast the data to our BlogPost type
+        setPosts(data as BlogPost[] || []);
       } catch (error: any) {
         console.error('Error fetching blog posts:', error);
         setError(error.message || 'Failed to load blog posts');

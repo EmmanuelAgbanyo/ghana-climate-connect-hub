@@ -30,7 +30,7 @@ const BlogPost = () => {
         setLoading(true);
         
         const { data, error } = await supabase
-          .from('blog_posts')
+          .from('blog_posts' as any)
           .select('*')
           .eq('id', id)
           .single();
@@ -39,7 +39,7 @@ const BlogPost = () => {
           throw error;
         }
         
-        setPost(data);
+        setPost(data as BlogPost);
       } catch (error: any) {
         console.error('Error fetching blog post:', error);
         setError(error.message || 'Failed to load blog post');

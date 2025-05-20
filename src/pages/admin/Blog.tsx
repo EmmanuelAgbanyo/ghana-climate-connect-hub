@@ -55,15 +55,15 @@ const BlogPostAdmin = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('blog_posts')
+        .from('blog_posts' as any)
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at' as any, { ascending: false });
 
       if (error) {
         throw error;
       }
 
-      setPosts(data || []);
+      setPosts(data as BlogPost[] || []);
     } catch (error: any) {
       console.error('Error fetching blog posts:', error);
       toast({
@@ -87,7 +87,7 @@ const BlogPostAdmin = () => {
       if (editing) {
         // Update existing post
         const { error } = await supabase
-          .from('blog_posts')
+          .from('blog_posts' as any)
           .update(values)
           .eq('id', editing);
 
@@ -100,8 +100,8 @@ const BlogPostAdmin = () => {
       } else {
         // Create new post
         const { error } = await supabase
-          .from('blog_posts')
-          .insert([values]);
+          .from('blog_posts' as any)
+          .insert([values as any]);
 
         if (error) throw error;
 
@@ -156,7 +156,7 @@ const BlogPostAdmin = () => {
 
     try {
       const { error } = await supabase
-        .from('blog_posts')
+        .from('blog_posts' as any)
         .delete()
         .eq('id', id);
 
