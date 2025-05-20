@@ -35,16 +35,20 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   useEffect(() => {
     console.log("AdminLayout render - auth state:", { user: !!user, isAdmin, loading });
     
-    // Verify admin access on route change
-    if (!loading && (!user || !isAdmin)) {
-      console.log("Access denied, redirecting to auth page");
-      toast({
-        title: "Access Denied",
-        description: "You must be logged in as an administrator to access this area.",
-        variant: "destructive"
-      });
-      navigate('/auth');
-    }
+    // Delay verification to allow auth state to complete
+    const checkAuth = setTimeout(() => {
+      if (!loading && (!user || !isAdmin)) {
+        console.log("Access denied, redirecting to auth page");
+        toast({
+          title: "Access Denied",
+          description: "You must be logged in as an administrator to access this area.",
+          variant: "destructive"
+        });
+        navigate('/auth');
+      }
+    }, 500);
+    
+    return () => clearTimeout(checkAuth);
   }, [location.pathname, loading, user, isAdmin, toast, navigate]);
   
   if (loading) {

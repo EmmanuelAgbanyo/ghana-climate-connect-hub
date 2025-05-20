@@ -35,16 +35,19 @@ const Auth = () => {
   
   // Check if user is already signed in and is admin
   useEffect(() => {
+    console.log("Auth page - checking user state:", { user: !!user, isAdmin });
     if (user && isAdmin) {
       console.log("User is authenticated and is admin, redirecting to dashboard");
-      navigate('/admin');
+      setTimeout(() => {
+        navigate('/admin');
+      }, 100);
     }
   }, [user, isAdmin, navigate]);
 
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(authFormSchema),
     defaultValues: {
-      email: '',
+      email: 'admin@climateapp.com',
       password: '',
     },
   });
@@ -57,6 +60,8 @@ const Auth = () => {
       await signIn(data.email, data.password);
       // Auth state will be updated via the auth state listener in AuthContext
       console.log("Sign-in successful");
+      
+      // We'll let the useEffect handle the redirect after isAdmin is set
     } catch (error: any) {
       console.error('Authentication error:', error);
       setAuthError(error.message || 'Invalid credentials. Please check your email and password.');
@@ -65,11 +70,7 @@ const Auth = () => {
     }
   };
 
-  // This was causing a race condition - we'll use the useEffect hook instead
-  // if (user && isAdmin) {
-  //   return <Navigate to="/admin" replace />;
-  // }
-
+  // Render the auth form
   return (
     <Layout>
       <div className="container max-w-md mx-auto py-10">
