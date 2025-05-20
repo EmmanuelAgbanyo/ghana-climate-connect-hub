@@ -19,6 +19,9 @@ import ContentManagement from "./pages/admin/ContentManagement";
 import GalleryAdmin from "./pages/admin/Gallery";
 import DataSources from "./pages/admin/DataSources";
 import ChatbotConfig from "./pages/admin/ChatbotConfig";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import BlogAdmin from "./pages/admin/Blog";
 
 const queryClient = new QueryClient();
 
@@ -36,10 +39,13 @@ const App = () => (
             <Route path="/resilient-leadership" element={<ResilientLeadership />} />
             <Route path="/call-to-action" element={<CallToAction />} />
             <Route path="/gallery" element={<Gallery />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:id" element={<BlogPost />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Dashboard />} />
             <Route path="/admin/content" element={<ContentManagement />} />
+            <Route path="/admin/blog" element={<BlogAdmin />} />
             <Route path="/admin/gallery" element={<GalleryAdmin />} />
             <Route path="/admin/data-sources" element={<DataSources />} />
             <Route path="/admin/chatbot" element={<ChatbotConfig />} />

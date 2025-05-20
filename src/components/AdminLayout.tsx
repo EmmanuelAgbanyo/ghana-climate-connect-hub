@@ -1,4 +1,3 @@
-
 import { ReactNode, useState, useEffect } from 'react';
 import { Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +12,8 @@ import {
   Users, 
   X,
   Image,
-  Shield
+  Shield,
+  Edit
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -32,24 +32,28 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  // Simplified authentication check to prevent infinite recursion
   useEffect(() => {
-    console.log("AdminLayout render - auth state:", { user: !!user, isAdmin, loading });
-    
-    // Delay verification to allow auth state to complete
-    const checkAuth = setTimeout(() => {
-      if (!loading && (!user || !isAdmin)) {
-        console.log("Access denied, redirecting to auth page");
+    if (!loading) {
+      if (!user) {
+        console.log("No user found, redirecting to auth page");
         toast({
           title: "Access Denied",
-          description: "You must be logged in as an administrator to access this area.",
+          description: "You must be logged in to access this area.",
+          variant: "destructive"
+        });
+        navigate('/auth');
+      } else if (!isAdmin) {
+        console.log("User is not admin, redirecting to auth page");
+        toast({
+          title: "Access Denied",
+          description: "You must be an administrator to access this area.",
           variant: "destructive"
         });
         navigate('/auth');
       }
-    }, 500);
-    
-    return () => clearTimeout(checkAuth);
-  }, [location.pathname, loading, user, isAdmin, toast, navigate]);
+    }
+  }, [loading, user, isAdmin, navigate, toast]);
   
   if (loading) {
     return (
@@ -59,14 +63,15 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     );
   }
   
+  // Only render the admin layout if we have a user and they're an admin
   if (!user || !isAdmin) {
-    console.log("Redirecting to auth page from AdminLayout");
-    return <Navigate to="/auth" replace />;
+    return null;
   }
 
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: Globe },
     { name: "Content Management", href: "/admin/content", icon: FileText },
+    { name: "Blog Posts", href: "/admin/blog", icon: Edit },
     { name: "Gallery", href: "/admin/gallery", icon: Image },
     { name: "Data Sources", href: "/admin/data-sources", icon: Globe },
     { name: "Chatbot Configuration", href: "/admin/chatbot", icon: MessageSquare },
