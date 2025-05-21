@@ -31,6 +31,7 @@ const blogPostSchema = z.object({
 });
 
 type BlogPost = z.infer<typeof blogPostSchema> & { id: string, created_at: string };
+type BlogPostInput = z.infer<typeof blogPostSchema>;
 
 const BlogPostAdmin = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -39,7 +40,7 @@ const BlogPostAdmin = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof blogPostSchema>>({
+  const form = useForm<BlogPostInput>({
     resolver: zodResolver(blogPostSchema),
     defaultValues: {
       title: '',
@@ -82,14 +83,23 @@ const BlogPostAdmin = () => {
   }, []);
 
   // Handle form submission
-  const onSubmit = async (values: z.infer<typeof blogPostSchema>) => {
+  const onSubmit = async (values: BlogPostInput) => {
+    // Ensure all required fields are present and not undefined
+    const blogPostData = {
+      title: values.title,
+      content: values.content,
+      author: values.author,
+      category: values.category,
+      image_url: values.image_url || null, // Handle optional field
+    };
+    
     setIsSubmitting(true);
     try {
       if (editing) {
         // Update existing post
         const { error } = await supabase
           .from('blog_posts')
-          .update(values)
+          .update(blogPostData)
           .eq('id', editing);
 
         if (error) throw error;
@@ -99,10 +109,10 @@ const BlogPostAdmin = () => {
           description: 'Blog post updated successfully',
         });
       } else {
-        // Create new post - FIX: Pass a single object, not an array
+        // Create new post - now with proper typing
         const { error } = await supabase
           .from('blog_posts')
-          .insert(values); // Fixed by removing the array brackets
+          .insert(blogPostData);
 
         if (error) throw error;
 
