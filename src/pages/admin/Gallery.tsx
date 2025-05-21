@@ -3,12 +3,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -22,15 +19,33 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
-import { Edit, Trash2, Plus, Image as ImageIcon } from 'lucide-react';
+import { Plus, Image as ImageIcon, Grid2x2, List } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import GalleryForm from '@/components/admin/gallery/GalleryForm';
+import GalleryItem from '@/components/admin/gallery/GalleryItem';
+import ImageEditor from '@/components/admin/gallery/ImageEditor';
+import GalleryAlbums from '@/components/admin/gallery/GalleryAlbums';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 
 type GalleryItem = {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   image_url: string;
   created_at: string;
+  album_id?: string | null;
 };
 
 const Gallery = () => {
@@ -39,23 +54,32 @@ const Gallery = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditingImage, setIsEditingImage] = useState(false);
   const [currentItem, setCurrentItem] = useState<Partial<GalleryItem>>({});
-  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchGalleryItems();
-  }, []);
+  }, [selectedAlbumId]);
 
   const fetchGalleryItems = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('gallery')
         .select('*')
         .order('created_at', { ascending: false });
+      
+      // If an album is selected, filter by it (this is a placeholder for future implementation)
+      if (selectedAlbumId) {
+        // This would be implemented when album functionality is added to the database
+        // query = query.eq('album_id', selectedAlbumId);
+      }
+        
+      const { data, error } = await query;
 
       if (error) throw error;
       setGalleryItems(data || []);
@@ -69,25 +93,6 @@ const Gallery = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setCurrentItem(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    setUploadedImage(file);
-    
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
   };
 
   const uploadImage = async (file: File): Promise<string> => {
@@ -118,9 +123,9 @@ const Gallery = () => {
     }
   };
 
-  const handleAdd = async () => {
+  const handleAdd = async (formData: { title: string; description: string; image: File | null; imagePreview: string | null }) => {
     try {
-      if (!currentItem.title) {
+      if (!formData.title) {
         toast({
           title: 'Missing fields',
           description: 'Please provide a title for the gallery item.',
@@ -130,8 +135,8 @@ const Gallery = () => {
       }
 
       let imageUrl = '';
-      if (uploadedImage) {
-        imageUrl = await uploadImage(uploadedImage);
+      if (formData.image) {
+        imageUrl = await uploadImage(formData.image);
       } else {
         toast({
           title: 'Missing image',
@@ -145,9 +150,10 @@ const Gallery = () => {
         .from('gallery')
         .insert([
           {
-            title: currentItem.title,
-            description: currentItem.description || '',
-            image_url: imageUrl
+            title: formData.title,
+            description: formData.description || null,
+            image_url: imageUrl,
+            // When album functionality is added: album_id: selectedAlbumId
           }
         ]);
 
@@ -159,9 +165,6 @@ const Gallery = () => {
       });
       
       setIsAddDialogOpen(false);
-      setCurrentItem({});
-      setUploadedImage(null);
-      setImagePreview(null);
       fetchGalleryItems();
     } catch (error: any) {
       console.error('Error adding gallery item:', error);
@@ -173,9 +176,9 @@ const Gallery = () => {
     }
   };
 
-  const handleEdit = async () => {
+  const handleEdit = async (formData: { title: string; description: string; image: File | null; imagePreview: string | null }) => {
     try {
-      if (!currentItem.id || !currentItem.title) {
+      if (!currentItem.id || !formData.title) {
         toast({
           title: 'Missing fields',
           description: 'Please provide a title for the gallery item.',
@@ -185,16 +188,17 @@ const Gallery = () => {
       }
 
       let imageUrl = currentItem.image_url;
-      if (uploadedImage) {
-        imageUrl = await uploadImage(uploadedImage);
+      if (formData.image) {
+        imageUrl = await uploadImage(formData.image);
       }
 
       const { error } = await supabase
         .from('gallery')
         .update({
-          title: currentItem.title,
-          description: currentItem.description || '',
-          image_url: imageUrl
+          title: formData.title,
+          description: formData.description || null,
+          image_url: imageUrl,
+          // When album functionality is added: album_id: selectedAlbumId
         })
         .eq('id', currentItem.id);
 
@@ -207,8 +211,6 @@ const Gallery = () => {
       
       setIsEditDialogOpen(false);
       setCurrentItem({});
-      setUploadedImage(null);
-      setImagePreview(null);
       fetchGalleryItems();
     } catch (error: any) {
       console.error('Error updating gallery item:', error);
@@ -251,7 +253,6 @@ const Gallery = () => {
 
   const openEditDialog = (item: GalleryItem) => {
     setCurrentItem(item);
-    setImagePreview(item.image_url);
     setIsEditDialogOpen(true);
   };
 
@@ -260,91 +261,182 @@ const Gallery = () => {
     setIsDeleteDialogOpen(true);
   };
 
+  const handleOpenImageEditor = (item: GalleryItem) => {
+    setCurrentItem(item);
+    setIsEditingImage(true);
+  };
+
+  const handleSaveEditedImage = async (blob: Blob) => {
+    try {
+      if (!currentItem.id) return;
+      
+      // Create a File object from Blob to upload
+      const file = new File([blob], 'edited-image.jpg', { type: 'image/jpeg' });
+      const imageUrl = await uploadImage(file);
+      
+      const { error } = await supabase
+        .from('gallery')
+        .update({
+          image_url: imageUrl
+        })
+        .eq('id', currentItem.id);
+
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: 'Image updated successfully.',
+      });
+      
+      setIsEditingImage(false);
+      setCurrentItem({});
+      fetchGalleryItems();
+    } catch (error: any) {
+      console.error('Error saving edited image:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to save edited image.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const renderGalleryList = () => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Image</TableHead>
+          <TableHead>Title</TableHead>
+          <TableHead>Description</TableHead>
+          <TableHead>Added on</TableHead>
+          <TableHead className="w-[100px]">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {galleryItems.map((item) => (
+          <GalleryItem
+            key={item.id}
+            item={item}
+            onEdit={openEditDialog}
+            onDelete={openDeleteDialog}
+            onViewDetail={handleOpenImageEditor}
+          />
+        ))}
+      </TableBody>
+    </Table>
+  );
+
+  const renderGalleryGrid = () => (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {galleryItems.map((item) => (
+        <Card key={item.id} className="overflow-hidden hover:shadow-md transition-shadow">
+          <div className="aspect-square relative">
+            {item.image_url ? (
+              <img 
+                src={item.image_url} 
+                alt={item.title} 
+                className="w-full h-full object-cover" 
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-muted">
+                <ImageIcon className="h-12 w-12 text-muted-foreground" />
+              </div>
+            )}
+            <div className="absolute top-2 right-2 flex space-x-1">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="bg-white/90 backdrop-blur-sm w-8 h-8"
+                onClick={() => openEditDialog(item)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="bg-white/90 backdrop-blur-sm w-8 h-8 text-red-500"
+                onClick={() => openDeleteDialog(item)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <CardHeader className="p-3">
+            <CardTitle className="text-sm font-medium truncate">{item.title}</CardTitle>
+            {item.description && (
+              <CardDescription className="text-xs truncate">{item.description}</CardDescription>
+            )}
+          </CardHeader>
+        </Card>
+      ))}
+    </div>
+  );
+
   return (
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-ghana-green">Gallery Management</h1>
-          <Button onClick={() => {
-            setCurrentItem({});
-            setImagePreview(null);
-            setUploadedImage(null);
-            setIsAddDialogOpen(true);
-          }} className="bg-ghana-green hover:bg-ghana-green/90">
-            <Plus className="h-4 w-4 mr-2" /> Add Gallery Item
-          </Button>
+          <div className="flex items-center space-x-2">
+            <div className="border rounded-md p-1 flex">
+              <Button 
+                variant={viewMode === 'list' ? 'default' : 'ghost'} 
+                size="sm" 
+                className={viewMode === 'list' ? 'bg-ghana-green hover:bg-ghana-green/90' : ''}
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant={viewMode === 'grid' ? 'default' : 'ghost'} 
+                size="sm" 
+                className={viewMode === 'grid' ? 'bg-ghana-green hover:bg-ghana-green/90' : ''}
+                onClick={() => setViewMode('grid')}
+              >
+                <Grid2x2 className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button onClick={() => setIsAddDialogOpen(true)} className="bg-ghana-green hover:bg-ghana-green/90">
+              <Plus className="h-4 w-4 mr-2" /> Add Image
+            </Button>
+          </div>
         </div>
         
-        {loading ? (
-          <div className="flex items-center justify-center p-8">
-            <Spinner size="lg" />
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="w-full md:w-1/4">
+            <GalleryAlbums 
+              selectedAlbumId={selectedAlbumId} 
+              onSelectAlbum={setSelectedAlbumId} 
+            />
           </div>
-        ) : galleryItems.length > 0 ? (
-          <div className="border rounded-md">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Image</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Added on</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {galleryItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <div className="h-16 w-20 rounded overflow-hidden">
-                        {item.image_url ? (
-                          <img 
-                            src={item.image_url} 
-                            alt={item.title} 
-                            className="h-full w-full object-cover" 
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-muted">
-                            <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">{item.title}</TableCell>
-                    <TableCell className="max-w-[300px] truncate">
-                      {item.description || "-"}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="icon"
-                          onClick={() => openEditDialog(item)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="icon"
-                          onClick={() => openDeleteDialog(item)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="w-full md:w-3/4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>Gallery Images</CardTitle>
+                <CardDescription>
+                  {selectedAlbumId ? 'Showing images from selected album' : 'Showing all gallery images'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="flex items-center justify-center p-8">
+                    <Spinner size="lg" />
+                  </div>
+                ) : galleryItems.length > 0 ? (
+                  <div className="border rounded-md">
+                    {viewMode === 'list' ? renderGalleryList() : renderGalleryGrid()}
+                  </div>
+                ) : (
+                  <div className="text-center p-8 border rounded-md bg-muted/50">
+                    {selectedAlbumId 
+                      ? "No images found in this album. Add some images to get started."
+                      : "No gallery items found. Add some images to get started."}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        ) : (
-          <div className="text-center p-8 border rounded-md bg-muted/50">
-            <p>No gallery items found. Add some images to get started.</p>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Add Dialog */}
@@ -356,62 +448,11 @@ const Gallery = () => {
               Upload images for the gallery section.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid w-full gap-1.5">
-              <label htmlFor="title" className="text-sm font-medium">Title</label>
-              <Input
-                id="title"
-                name="title"
-                value={currentItem.title || ''}
-                onChange={handleInputChange}
-                placeholder="Enter image title"
-              />
-            </div>
-            <div className="grid w-full gap-1.5">
-              <label htmlFor="description" className="text-sm font-medium">Description (optional)</label>
-              <Textarea
-                id="description"
-                name="description"
-                value={currentItem.description || ''}
-                onChange={handleInputChange}
-                placeholder="Enter image description"
-                className="min-h-[100px]"
-              />
-            </div>
-            <div className="grid w-full gap-1.5">
-              <label htmlFor="image" className="text-sm font-medium">Image</label>
-              <div className="flex flex-col items-center gap-4">
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-                {imagePreview && (
-                  <div className="mt-2 rounded-md overflow-hidden w-full max-h-[200px] flex items-center justify-center">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="max-w-full max-h-[200px] object-contain" 
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleAdd} 
-              className="bg-ghana-green hover:bg-ghana-green/90"
-              disabled={uploadProgress}
-            >
-              {uploadProgress ? <Spinner size="sm" className="mr-2" /> : null}
-              Add Image
-            </Button>
-          </DialogFooter>
+          <GalleryForm
+            onSubmit={handleAdd}
+            isSubmitting={uploadProgress}
+            submitLabel="Add Image"
+          />
         </DialogContent>
       </Dialog>
 
@@ -424,60 +465,18 @@ const Gallery = () => {
               Update the gallery item information.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid w-full gap-1.5">
-              <label htmlFor="edit-title" className="text-sm font-medium">Title</label>
-              <Input
-                id="edit-title"
-                name="title"
-                value={currentItem.title || ''}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="grid w-full gap-1.5">
-              <label htmlFor="edit-description" className="text-sm font-medium">Description (optional)</label>
-              <Textarea
-                id="edit-description"
-                name="description"
-                value={currentItem.description || ''}
-                onChange={handleInputChange}
-                className="min-h-[100px]"
-              />
-            </div>
-            <div className="grid w-full gap-1.5">
-              <label htmlFor="edit-image" className="text-sm font-medium">Image (optional)</label>
-              <div className="flex flex-col items-center gap-4">
-                <Input
-                  id="edit-image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-                {imagePreview && (
-                  <div className="mt-2 rounded-md overflow-hidden w-full max-h-[200px] flex items-center justify-center">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="max-w-full max-h-[200px] object-contain" 
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleEdit} 
-              className="bg-ghana-green hover:bg-ghana-green/90"
-              disabled={uploadProgress}
-            >
-              {uploadProgress ? <Spinner size="sm" className="mr-2" /> : null}
-              Save Changes
-            </Button>
-          </DialogFooter>
+          <GalleryForm
+            initialData={{
+              id: currentItem.id,
+              title: currentItem.title || '',
+              description: currentItem.description || '',
+              image_url: currentItem.image_url
+            }}
+            onSubmit={handleEdit}
+            onCancel={() => setIsEditDialogOpen(false)}
+            isSubmitting={uploadProgress}
+            submitLabel="Save Changes"
+          />
         </DialogContent>
       </Dialog>
 
@@ -498,6 +497,25 @@ const Gallery = () => {
               Delete
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Editor Dialog */}
+      <Dialog open={isEditingImage} onOpenChange={setIsEditingImage}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Edit Image</DialogTitle>
+            <DialogDescription>
+              Make adjustments to your gallery image.
+            </DialogDescription>
+          </DialogHeader>
+          {currentItem.image_url && (
+            <ImageEditor
+              imageUrl={currentItem.image_url}
+              onSave={handleSaveEditedImage}
+              onCancel={() => setIsEditingImage(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </AdminLayout>
