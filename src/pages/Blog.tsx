@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
@@ -33,8 +32,8 @@ const Blog = () => {
           throw error;
         }
         
-        // Safely cast data to our BlogPost type after checking for errors
-        setPosts((data as BlogPost[]) || []);
+        // Type assertion after validation
+        setPosts(data as BlogPost[] || []);
       } catch (error: any) {
         console.error('Error fetching blog posts:', error);
         setError(error.message || 'Failed to load blog posts');

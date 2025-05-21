@@ -99,10 +99,10 @@ const BlogPostAdmin = () => {
           description: 'Blog post updated successfully',
         });
       } else {
-        // Create new post
+        // Create new post - FIX: Pass a single object, not an array
         const { error } = await supabase
           .from('blog_posts')
-          .insert([values]);
+          .insert(values); // Fixed by removing the array brackets
 
         if (error) throw error;
 

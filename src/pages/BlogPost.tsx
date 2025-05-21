@@ -1,11 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { PostgrestResponse } from '@supabase/supabase-js';
 
 type BlogPost = {
   id: string;
@@ -44,7 +42,7 @@ const BlogPost = () => {
           throw new Error('Blog post not found');
         }
         
-        // Now we can safely cast the data since we know it's a single object
+        // Type assertion after validating data exists
         setPost(data as BlogPost);
       } catch (error: any) {
         console.error('Error fetching blog post:', error);
