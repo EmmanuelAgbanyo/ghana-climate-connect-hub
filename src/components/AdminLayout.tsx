@@ -1,5 +1,6 @@
+
 import { ReactNode, useState, useEffect } from 'react';
-import { Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   ChevronDown, 
@@ -8,8 +9,6 @@ import {
   LogOut, 
   Menu, 
   MessageSquare, 
-  Settings, 
-  Users, 
   X,
   Image,
   Shield,
@@ -32,7 +31,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Simplified authentication check to prevent infinite recursion
+  // Protection logic to prevent unauthorized access
   useEffect(() => {
     if (!loading) {
       if (!user) {
@@ -109,20 +108,23 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           <ScrollArea className="flex-grow">
             <nav className="p-4 space-y-1">
               {navigation.map((item) => (
-                <Link
+                <Button
                   key={item.name}
-                  to={item.href}
+                  variant="ghost"
                   className={cn(
-                    "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                    "w-full justify-start text-left",
                     location.pathname === item.href
                       ? "bg-white/20 text-white"
                       : "text-white/70 hover:bg-white/10 hover:text-white"
                   )}
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={() => {
+                    setSidebarOpen(false);
+                    navigate(item.href);
+                  }}
                 >
                   <item.icon className="mr-3 h-5 w-5" />
                   {item.name}
-                </Link>
+                </Button>
               ))}
             </nav>
           </ScrollArea>
@@ -132,7 +134,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0">
                   <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
-                    <Users className="h-5 w-5" />
+                    <Shield className="h-5 w-5" />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -147,10 +149,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => {
-                  signOut();
-                  navigate('/');
-                }}
+                onClick={() => signOut()}
                 className="text-white hover:bg-white/10"
               >
                 <LogOut className="h-5 w-5" />

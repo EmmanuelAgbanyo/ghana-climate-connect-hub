@@ -39,42 +39,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  // Simplified admin check function using the new database function
-  const checkAdmin = async (userId: string, userEmail: string) => {
-    console.log("Checking admin status for user:", userId);
-    
-    // For testing, if the email is admin@climateapp.com, set isAdmin to true directly
-    if (userEmail === 'admin@climateapp.com') {
-      console.log("Setting admin status based on email match");
-      setIsAdmin(true);
-      return true;
-    }
-    
+  // Check if user is admin using the improved database function
+  const checkAdmin = async (userId: string) => {
     try {
-      // Call the new is_admin_user function
+      console.log("Checking admin status for user:", userId);
+      
+      // Call the is_admin_user function directly
       const { data, error } = await supabase.rpc('is_admin_user', { user_id: userId });
       
       if (error) {
         console.error('Error checking admin status:', error);
-        // Fallback for the specific email address
-        setIsAdmin(userEmail === 'admin@climateapp.com');
-        return userEmail === 'admin@climateapp.com';
+        setIsAdmin(false);
+        return false;
       }
       
       console.log("Admin status from DB:", data);
       setIsAdmin(!!data);
       return !!data;
-      
     } catch (error) {
       console.error('Exception checking admin status:', error);
-      
-      // Fallback for the specific email address
-      if (userEmail === 'admin@climateapp.com') {
-        console.log("Setting admin status based on email fallback after exception");
-        setIsAdmin(true);
-        return true;
-      }
-      
       setIsAdmin(false);
       return false;
     }
@@ -91,15 +74,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // For testing, if the email is admin@climateapp.com, set isAdmin to true directly
-          if (session.user.email === 'admin@climateapp.com') {
-            setIsAdmin(true);
-          } else {
-            // Check if user is an admin after a small delay to avoid recursion
-            setTimeout(() => {
-              checkAdmin(session.user.id, session.user.email || '');
-            }, 100);
-          }
+          // Check admin status with a small delay to avoid recursion
+          setTimeout(() => {
+            checkAdmin(session.user.id);
+          }, 100);
         } else {
           setIsAdmin(false);
         }
@@ -113,18 +91,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // For testing, if the email is admin@climateapp.com, set isAdmin to true directly
-        if (session.user.email === 'admin@climateapp.com') {
-          setIsAdmin(true);
-          setLoading(false);
-        } else {
-          // Check if user is an admin with delay
-          setTimeout(() => {
-            checkAdmin(session.user.id, session.user.email || '').finally(() => {
-              setLoading(false);
-            });
-          }, 100);
-        }
+        // Check if user is admin with delay
+        setTimeout(() => {
+          checkAdmin(session.user.id).finally(() => {
+            setLoading(false);
+          });
+        }, 100);
       } else {
         setLoading(false);
       }
@@ -156,17 +128,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       console.log("Sign in successful:", data.user?.email);
       
-      // Handle admin status directly for testing
-      if (data.user && data.user.email === 'admin@climateapp.com') {
-        setIsAdmin(true);
-      } else if (data.user) {
-        // Check admin status for other users
-        checkAdmin(data.user.id, data.user.email || '');
+      // Check admin status if sign-in successful
+      if (data.user) {
+        await checkAdmin(data.user.id);
       }
       
       toast({
         title: "Signed in",
-        description: "You have successfully signed in as an admin.",
+        description: "You have successfully signed in.",
       });
     } catch (error: any) {
       console.error("Sign in error:", error);

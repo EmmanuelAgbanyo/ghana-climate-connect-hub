@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -35,19 +35,16 @@ const Auth = () => {
   
   // Check if user is already signed in and is admin
   useEffect(() => {
-    console.log("Auth page - checking user state:", { user: !!user, isAdmin });
     if (user && isAdmin) {
       console.log("User is authenticated and is admin, redirecting to dashboard");
-      setTimeout(() => {
-        navigate('/admin');
-      }, 100);
+      navigate('/admin');
     }
   }, [user, isAdmin, navigate]);
 
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(authFormSchema),
     defaultValues: {
-      email: 'admin@climateapp.com',
+      email: '',
       password: '',
     },
   });
@@ -59,9 +56,6 @@ const Auth = () => {
     try {
       await signIn(data.email, data.password);
       // Auth state will be updated via the auth state listener in AuthContext
-      console.log("Sign-in successful");
-      
-      // We'll let the useEffect handle the redirect after isAdmin is set
     } catch (error: any) {
       console.error('Authentication error:', error);
       setAuthError(error.message || 'Invalid credentials. Please check your email and password.');
