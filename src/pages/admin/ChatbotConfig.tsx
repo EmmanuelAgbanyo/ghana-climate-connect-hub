@@ -144,7 +144,7 @@ You should be helpful, informative, and focused on climate education and action 
                     className="bg-ghana-green hover:bg-ghana-green/90"
                     onClick={handleTrainOnContent}
                   >
-                    Train on Content Database
+                    Refresh Chatbot Knowledge Context
                   </Button>
                 </div>
               </CardContent>

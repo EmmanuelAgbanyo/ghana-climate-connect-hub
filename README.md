@@ -36,6 +36,24 @@ npm i
 npm run dev
 ```
 
+## Configuration
+
+### Setting up the Google AI API Key
+
+The chatbot functionality in this project uses the Google AI API. To enable the chatbot, you need to provide your own Google AI API key.
+
+1.  **Create a `.env.local` file:**
+    If you don't already have one, create a file named `.env.local` in the root directory of the project.
+
+2.  **Add your API Key:**
+    Open the `.env.local` file and add the following line, replacing `YOUR_ACTUAL_API_KEY` with your actual Google AI API key:
+    ```
+    VITE_GOOGLE_AI_API_KEY=YOUR_ACTUAL_API_KEY
+    ```
+
+3.  **Important Security Note:**
+    The `.env.local` file is included in the project's `.gitignore` file by default. This is crucial for security, as it prevents your API key from being accidentally committed to the repository. **Never commit your `.env.local` file or your API key directly into the codebase.**
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).

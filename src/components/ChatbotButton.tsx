@@ -8,7 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { supabase } from '@/integrations/supabase/client';
 
 // Google AI API key
-const GOOGLE_AI_API_KEY = "AIzaSyDQhPWE_tvA2E0_uZskdCaLe-NUkHDP-PU";
+const GOOGLE_AI_API_KEY = import.meta.env.VITE_GOOGLE_AI_API_KEY;
 
 type ChatMessage = {
   type: 'user' | 'bot';
@@ -60,8 +60,19 @@ const ChatbotButton = () => {
       ).join('\n\n');
       
       // Prepare prompt with context
+      const detailedSystemPromptFromChatbotConfig = `You are ClimateWise, an AI assistant specialized in Ghana's climate information. You provide accurate information about Ghana's climate change challenges, adaptation strategies, and climate policies. Your knowledge includes Ghana's Nationally Determined Contributions (NDCs), climate vulnerability assessments, and local adaptation initiatives.
+
+When users ask questions, focus on providing information that is:
+1. Specific to Ghana's climate context
+2. Based on accurate scientific data
+3. Actionable and relevant for Ghanaian communities
+4. Supportive of Ghana's climate resilience goals
+
+You should be helpful, informative, and focused on climate education and action in Ghana.`;
+      
       const prompt = `
-You are ClimateWise, an AI assistant specialized in Ghana's climate information. 
+${detailedSystemPromptFromChatbotConfig}
+
 Use this context about Ghana's climate initiatives if relevant:
 ${contextFromDb}
 
